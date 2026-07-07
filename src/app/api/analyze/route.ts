@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 
-const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5";
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 const PROMPT = `You are helping someone log a drink they photographed for a personal drinking/calorie tracker.
-Look at the image and identify the beverage. Respond with ONLY a JSON object (no markdown, no commentary, no code fences) with these exact fields:
+Look at the image and identify the beverage. Respond with ONLY a JSON object matching these exact fields:
 {
   "name": string (e.g. "Modelo Especial", "Glass of red wine"),
   "drink_type": one of "beer" | "wine" | "spirit" | "cocktail" | "seltzer" | "non-alcoholic" | "other",
@@ -17,9 +17,9 @@ Look at the image and identify the beverage. Respond with ONLY a JSON object (no
 If you cannot identify a beverage in the image at all, set "name" to "Unknown", confidence to "low", and still provide reasonable best-guess numbers for a standard serving.`;
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     return NextResponse.json(
-      { error: "ANTHROPIC_API_KEY is not set. Add it to .env.local and restart the dev server." },
+      { error: "GEMINI_API_KEY is not set. Add it to .env.local and restart the dev server." },
       { status: 500 }
     );
   }
@@ -29,40 +29,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No image provided" }, { status: 400 });
   }
 
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-  let message;
+  let raw = "";
   try {
-    message = await anthropic.messages.create({
+    const response = await ai.models.generateContent({
       model: MODEL,
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: mediaType || "image/jpeg",
-                data: image,
-              },
-            },
-            { type: "text", text: PROMPT },
-          ],
-        },
+      contents: [
+        { text: PROMPT },
+        { inlineData: { mimeType: mediaType || "image/jpeg", data: image } },
       ],
+      config: { responseMimeType: "application/json" },
     });
+    raw = response.text ?? "";
   } catch (err) {
-    const detail = err instanceof Anthropic.APIError ? err.message : "Unknown error";
+    const detail = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(
-      { error: `Anthropic API request failed: ${detail}` },
+      { error: `Gemini API request failed: ${detail}` },
       { status: 502 }
     );
   }
-
-  const textBlock = message.content.find((b) => b.type === "text");
-  const raw = textBlock && "text" in textBlock ? textBlock.text : "";
 
   try {
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
