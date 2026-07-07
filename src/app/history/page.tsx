@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { LogEntry } from "@/lib/types";
 import { todayLocal } from "@/lib/drinks";
+import { useDrinks } from "@/lib/drinkStore";
 import DrinkListItem from "@/components/DrinkListItem";
 
 type DayGroup = {
@@ -13,17 +14,7 @@ type DayGroup = {
 };
 
 export default function HistoryPage() {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    fetch(`/api/logs`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        setLogs(data);
-        setLoaded(true);
-      });
-  }, []);
+  const logs = useDrinks();
 
   const groups = useMemo<DayGroup[]>(() => {
     const map = new Map<string, DayGroup>();
@@ -84,7 +75,7 @@ export default function HistoryPage() {
         </div>
       </section>
 
-      {loaded && groups.length === 0 && (
+      {groups.length === 0 && (
         <p className="rounded-2xl border border-dashed border-stone-300 px-4 py-8 text-center text-sm text-stone-400 dark:border-stone-700">
           No history yet. Log your first drink on the Track tab.
         </p>

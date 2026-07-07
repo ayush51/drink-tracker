@@ -5,7 +5,7 @@ import { DRINK_EMOJI } from "@/lib/drinks";
 
 type Props = {
   log: LogEntry;
-  onDelete?: (id: number) => void;
+  onDelete?: (id: string) => void;
   showTime?: boolean;
 };
 

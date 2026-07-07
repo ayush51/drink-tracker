@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { LogEntry } from "@/lib/types";
+import { useMemo, useState } from "react";
 import { todayLocal } from "@/lib/drinks";
+import { useDrinks } from "@/lib/drinkStore";
 import DrinkListItem from "@/components/DrinkListItem";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -20,23 +20,15 @@ export default function CalendarPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth()); // 0-11
   const [selected, setSelected] = useState<string>(todayLocal());
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const allDrinks = useDrinks();
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstWeekday = new Date(year, month, 1).getDay();
 
-  useEffect(() => {
-    const from = ymd(year, month, 1);
-    const to = ymd(year, month, daysInMonth);
-    fetch(`/api/logs?from=${from}&to=${to}`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then(setLogs);
-  }, [year, month, daysInMonth]);
-
   // Per-day aggregates for the visible month.
   const byDay = useMemo(() => {
     const map = new Map<string, { count: number; std: number }>();
-    for (const log of logs) {
+    for (const log of allDrinks) {
       const key = todayLocal(new Date(log.created_at));
       const cur = map.get(key) ?? { count: 0, std: 0 };
       cur.count += 1;
@@ -44,11 +36,11 @@ export default function CalendarPage() {
       map.set(key, cur);
     }
     return map;
-  }, [logs]);
+  }, [allDrinks]);
 
   const selectedLogs = useMemo(
-    () => logs.filter((l) => todayLocal(new Date(l.created_at)) === selected),
-    [logs, selected]
+    () => allDrinks.filter((l) => todayLocal(new Date(l.created_at)) === selected),
+    [allDrinks, selected]
   );
 
   function shiftMonth(delta: number) {

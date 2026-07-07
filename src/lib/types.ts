@@ -18,7 +18,7 @@ export type AnalyzedDrink = {
 };
 
 export type LogEntry = {
-  id: number;
+  id: string;
   created_at: string;
   name: string;
   drink_type: DrinkType;

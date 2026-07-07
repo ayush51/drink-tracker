@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import type { AnalyzedDrink, LogEntry } from "@/lib/types";
+import { useMemo, useState } from "react";
+import type { AnalyzedDrink } from "@/lib/types";
 import { todayLocal, fileToBase64, blankDraft } from "@/lib/drinks";
+import { useDrinks, addDrink, deleteDrink } from "@/lib/drinkStore";
 import { useProfile, greetingFor } from "@/lib/profile";
 import ProgressRing from "@/components/ProgressRing";
 import DrinkForm from "@/components/DrinkForm";
@@ -22,21 +23,13 @@ export default function TrackPage() {
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [draft, setDraft] = useState<AnalyzedDrink>(blankDraft());
   const [aiNote, setAiNote] = useState<string | undefined>(undefined);
-  const [saving, setSaving] = useState(false);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
 
-  const fetchTodayLogs = useCallback(() => fetch(`/api/logs?date=${todayLocal()}`), []);
-
-  const refreshLogs = useCallback(async () => {
-    const res = await fetchTodayLogs();
-    if (res.ok) setLogs(await res.json());
-  }, [fetchTodayLogs]);
-
-  useEffect(() => {
-    fetchTodayLogs()
-      .then((res) => (res.ok ? res.json() : []))
-      .then(setLogs);
-  }, [fetchTodayLogs]);
+  const allDrinks = useDrinks();
+  const today = todayLocal();
+  const logs = useMemo(
+    () => allDrinks.filter((d) => todayLocal(new Date(d.created_at)) === today),
+    [allDrinks, today]
+  );
 
   function resetCapture() {
     setMode("idle");
@@ -101,27 +94,14 @@ export default function TrackPage() {
     setMode("editing");
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!draft.name.trim()) return;
-    setSaving(true);
-    try {
-      const res = await fetch("/api/logs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(draft),
-      });
-      if (res.ok) {
-        resetCapture();
-        await refreshLogs();
-      }
-    } finally {
-      setSaving(false);
-    }
+    addDrink(draft);
+    resetCapture();
   }
 
-  async function handleDelete(id: number) {
-    await fetch(`/api/logs?id=${id}`, { method: "DELETE" });
-    await refreshLogs();
+  function handleDelete(id: string) {
+    deleteDrink(id);
   }
 
   const totalCalories = logs.reduce((sum, l) => sum + l.calories, 0);
@@ -247,7 +227,6 @@ export default function TrackPage() {
               onChange={setDraft}
               onSave={handleSave}
               onCancel={resetCapture}
-              saving={saving}
               aiNote={aiNote}
             />
           </>
