@@ -16,10 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sip · Drink Tracker",
+  title: "Sip Happens · Drink Tracker",
   description: "Track and limit your drinking",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Sip" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Sip Happens" },
   icons: { apple: "/apple-icon.png" },
 };
 

@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Sip · Drink Tracker",
-    short_name: "Sip",
+    name: "Sip Happens · Drink Tracker",
+    short_name: "Sip Happens",
     description: "Track and limit your drinking",
     start_url: "/",
     display: "standalone",

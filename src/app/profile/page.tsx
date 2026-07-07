@@ -86,8 +86,12 @@ function ProfileForm({ initial }: { initial: Profile }) {
       </section>
 
       <p className="px-2 text-center text-[11px] text-stone-400">
-        Your name and goal are stored only on this device.
+        Your profile and drink history are stored only on this device.
       </p>
+
+      <footer className="pt-1 text-center text-[11px] font-medium text-stone-400">
+        Made with 🍸 by Sober Ayush
+      </footer>
     </main>
   );
 }

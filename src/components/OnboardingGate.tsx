@@ -39,7 +39,7 @@ export default function OnboardingGate() {
             <path d="M12 13v6M8 21h8M9 7h6" />
           </svg>
         </span>
-        <h1 className="text-2xl font-bold tracking-tight">Welcome to Sip</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Welcome to Sip Happens</h1>
         <p className="mx-auto mt-1 max-w-xs text-sm text-white/85">
           Track what you drink, stay under your limit, and build better habits.
         </p>

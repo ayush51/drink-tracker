@@ -11,7 +11,7 @@ export default function AppHeader() {
           </svg>
         </span>
         <div className="leading-tight">
-          <div className="text-lg font-bold tracking-tight">Sip</div>
+          <div className="text-lg font-bold tracking-tight">Sip Happens</div>
           <div className="text-[11px] font-medium text-white/80">Drink &amp; calorie tracker</div>
         </div>
       </div>
