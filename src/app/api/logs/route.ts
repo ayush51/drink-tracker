@@ -2,14 +2,29 @@ import { NextRequest, NextResponse } from "next/server";
 import db, { standardDrinks } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
-  const date = req.nextUrl.searchParams.get("date"); // YYYY-MM-DD, local date
-  const rows = date
-    ? db
-        .prepare(
-          `SELECT * FROM drinks WHERE date(created_at, 'localtime') = ? ORDER BY created_at DESC`
-        )
-        .all(date)
-    : db.prepare(`SELECT * FROM drinks ORDER BY created_at DESC LIMIT 200`).all();
+  const params = req.nextUrl.searchParams;
+  const date = params.get("date"); // YYYY-MM-DD, single local day
+  const from = params.get("from"); // YYYY-MM-DD range start (inclusive)
+  const to = params.get("to"); // YYYY-MM-DD range end (inclusive)
+
+  let rows;
+  if (date) {
+    rows = db
+      .prepare(
+        `SELECT * FROM drinks WHERE date(created_at, 'localtime') = ? ORDER BY created_at DESC`
+      )
+      .all(date);
+  } else if (from && to) {
+    rows = db
+      .prepare(
+        `SELECT * FROM drinks
+         WHERE date(created_at, 'localtime') BETWEEN ? AND ?
+         ORDER BY created_at DESC`
+      )
+      .all(from, to);
+  } else {
+    rows = db.prepare(`SELECT * FROM drinks ORDER BY created_at DESC LIMIT 500`).all();
+  }
 
   return NextResponse.json(rows);
 }

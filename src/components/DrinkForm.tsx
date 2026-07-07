@@ -1,0 +1,106 @@
+"use client";
+
+import type { AnalyzedDrink, DrinkType } from "@/lib/types";
+import { DRINK_TYPES, estimateStandardDrinks } from "@/lib/drinks";
+
+type Props = {
+  value: AnalyzedDrink;
+  onChange: (next: AnalyzedDrink) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saving?: boolean;
+  aiNote?: string;
+};
+
+const inputCls =
+  "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 dark:border-stone-700 dark:bg-stone-900";
+
+export default function DrinkForm({ value, onChange, onSave, onCancel, saving, aiNote }: Props) {
+  const std = estimateStandardDrinks(Number(value.volume_ml), Number(value.abv_percent));
+
+  return (
+    <div className="space-y-3">
+      {aiNote && (
+        <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+          {aiNote}
+        </div>
+      )}
+
+      <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+        Name
+        <input
+          className={inputCls}
+          placeholder="e.g. Modelo Especial"
+          value={value.name}
+          onChange={(e) => onChange({ ...value, name: e.target.value })}
+        />
+      </label>
+
+      <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+        Type
+        <select
+          className={inputCls}
+          value={value.drink_type}
+          onChange={(e) => onChange({ ...value, drink_type: e.target.value as DrinkType })}
+        >
+          {DRINK_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <div className="grid grid-cols-3 gap-2">
+        <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+          Volume (ml)
+          <input
+            type="number"
+            className={inputCls}
+            value={value.volume_ml}
+            onChange={(e) => onChange({ ...value, volume_ml: Number(e.target.value) })}
+          />
+        </label>
+        <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+          ABV (%)
+          <input
+            type="number"
+            step="0.1"
+            className={inputCls}
+            value={value.abv_percent}
+            onChange={(e) => onChange({ ...value, abv_percent: Number(e.target.value) })}
+          />
+        </label>
+        <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+          Calories
+          <input
+            type="number"
+            className={inputCls}
+            value={value.calories}
+            onChange={(e) => onChange({ ...value, calories: Number(e.target.value) })}
+          />
+        </label>
+      </div>
+
+      <p className="text-xs text-stone-400 dark:text-stone-500">
+        ≈ {std.toFixed(1)} standard drink{std.toFixed(1) === "1.0" ? "" : "s"}
+      </p>
+
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={onCancel}
+          className="flex-1 rounded-full border border-stone-300 py-2.5 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onSave}
+          disabled={saving || !value.name.trim()}
+          className="flex-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
+        >
+          {saving ? "Logging…" : "Log it"}
+        </button>
+      </div>
+    </div>
+  );
+}
