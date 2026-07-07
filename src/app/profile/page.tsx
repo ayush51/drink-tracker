@@ -9,19 +9,22 @@ const inputCls =
 export default function ProfilePage() {
   const profile = useProfile();
   // Re-seed the form whenever the stored profile changes (e.g. after save).
-  const sig = `${profile.name}|${profile.dailyLimitDrinks}`;
+  const sig = `${profile.name}|${profile.motto}|${profile.dailyLimitDrinks}`;
   return <ProfileForm key={sig} initial={profile} />;
 }
 
 function ProfileForm({ initial }: { initial: Profile }) {
   const [name, setName] = useState(initial.name);
+  const [motto, setMotto] = useState(initial.motto);
   const [limit, setLimit] = useState(String(initial.dailyLimitDrinks));
   const [savedAt, setSavedAt] = useState(0);
 
   function handleSave() {
     saveProfile({
       name: name.trim(),
+      motto: motto.trim(),
       dailyLimitDrinks: Math.max(0, Number(limit) || 0),
+      onboarded: true,
     });
     setSavedAt(Date.now());
   }
@@ -40,6 +43,16 @@ function ProfileForm({ initial }: { initial: Profile }) {
             placeholder="What should we call you?"
             value={name}
             onChange={(e) => setName(e.target.value)}
+          />
+        </label>
+
+        <label className="mt-4 block text-xs font-medium text-stone-500 dark:text-stone-400">
+          Motto
+          <input
+            className={inputCls}
+            placeholder="e.g. No alcohol"
+            value={motto}
+            onChange={(e) => setMotto(e.target.value)}
           />
         </label>
 

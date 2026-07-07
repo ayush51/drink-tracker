@@ -150,6 +150,11 @@ export default function TrackPage() {
         <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
           {greetingFor(profile.name)} 👋
         </p>
+        {profile.motto && (
+          <p className="mt-0.5 text-sm font-semibold italic text-amber-600 dark:text-amber-400">
+            “{profile.motto}”
+          </p>
+        )}
         <div className="mt-3 flex items-center gap-5">
           <ProgressRing value={totalStd} goal={limit} label={ringLabel} sublabel={ringSublabel} />
           <div className="flex-1 space-y-3">

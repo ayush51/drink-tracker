@@ -4,11 +4,13 @@ import { useSyncExternalStore } from "react";
 
 export type Profile = {
   name: string;
+  motto: string;
   dailyLimitDrinks: number;
+  onboarded: boolean;
 };
 
 const KEY = "dt_profile";
-const DEFAULT: Profile = { name: "", dailyLimitDrinks: 3 };
+const DEFAULT: Profile = { name: "", motto: "", dailyLimitDrinks: 3, onboarded: false };
 
 let cache: Profile = DEFAULT;
 let cacheRaw: string | null = null;
@@ -23,9 +25,12 @@ function read(): Profile {
       const parsed = raw ? JSON.parse(raw) : {};
       cache = {
         name: parsed.name ?? DEFAULT.name,
+        motto: parsed.motto ?? DEFAULT.motto,
         // migrate the old `dailyGoalDrinks` key if present
         dailyLimitDrinks:
           parsed.dailyLimitDrinks ?? parsed.dailyGoalDrinks ?? DEFAULT.dailyLimitDrinks,
+        // existing users (already have a name) are treated as onboarded
+        onboarded: parsed.onboarded ?? Boolean(parsed.name),
       };
     } catch {
       cache = DEFAULT;
@@ -52,6 +57,15 @@ export function saveProfile(next: Profile) {
 /** Reactive profile hook backed by localStorage (SSR-safe). */
 export function useProfile(): Profile {
   return useSyncExternalStore(subscribe, read, () => DEFAULT);
+}
+
+/** True only after client hydration — lets us avoid SSR flashes without effects. */
+export function useHydrated(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 }
 
 export function greetingFor(name: string) {
