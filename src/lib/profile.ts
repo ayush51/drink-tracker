@@ -4,11 +4,11 @@ import { useSyncExternalStore } from "react";
 
 export type Profile = {
   name: string;
-  dailyGoalDrinks: number;
+  dailyLimitDrinks: number;
 };
 
 const KEY = "dt_profile";
-const DEFAULT: Profile = { name: "", dailyGoalDrinks: 3 };
+const DEFAULT: Profile = { name: "", dailyLimitDrinks: 3 };
 
 let cache: Profile = DEFAULT;
 let cacheRaw: string | null = null;
@@ -20,7 +20,13 @@ function read(): Profile {
   if (raw !== cacheRaw) {
     cacheRaw = raw;
     try {
-      cache = raw ? { ...DEFAULT, ...JSON.parse(raw) } : DEFAULT;
+      const parsed = raw ? JSON.parse(raw) : {};
+      cache = {
+        name: parsed.name ?? DEFAULT.name,
+        // migrate the old `dailyGoalDrinks` key if present
+        dailyLimitDrinks:
+          parsed.dailyLimitDrinks ?? parsed.dailyGoalDrinks ?? DEFAULT.dailyLimitDrinks,
+      };
     } catch {
       cache = DEFAULT;
     }

@@ -9,19 +9,19 @@ const inputCls =
 export default function ProfilePage() {
   const profile = useProfile();
   // Re-seed the form whenever the stored profile changes (e.g. after save).
-  const sig = `${profile.name}|${profile.dailyGoalDrinks}`;
+  const sig = `${profile.name}|${profile.dailyLimitDrinks}`;
   return <ProfileForm key={sig} initial={profile} />;
 }
 
 function ProfileForm({ initial }: { initial: Profile }) {
   const [name, setName] = useState(initial.name);
-  const [goal, setGoal] = useState(String(initial.dailyGoalDrinks));
+  const [limit, setLimit] = useState(String(initial.dailyLimitDrinks));
   const [savedAt, setSavedAt] = useState(0);
 
   function handleSave() {
     saveProfile({
       name: name.trim(),
-      dailyGoalDrinks: Math.max(0, Number(goal) || 0),
+      dailyLimitDrinks: Math.max(0, Number(limit) || 0),
     });
     setSavedAt(Date.now());
   }
@@ -44,17 +44,18 @@ function ProfileForm({ initial }: { initial: Profile }) {
         </label>
 
         <label className="mt-4 block text-xs font-medium text-stone-500 dark:text-stone-400">
-          Daily goal (standard drinks)
+          Daily limit (standard drinks)
           <input
             type="number"
             min="0"
             step="0.5"
             className={inputCls}
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
+            value={limit}
+            onChange={(e) => setLimit(e.target.value)}
           />
           <span className="mt-1 block text-[11px] font-normal text-stone-400">
-            Used for the progress ring on the Track tab. Set 0 to hide the goal.
+            The ring on the Track tab counts down from this and warns you when you go over. Set 0 to
+            hide the limit.
           </span>
         </label>
 

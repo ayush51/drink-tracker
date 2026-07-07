@@ -43,7 +43,11 @@ export default function ProgressRing({ value, goal, label, sublabel }: Props) {
           {label}
         </span>
         {sublabel && (
-          <span className="text-[11px] font-medium text-stone-400 dark:text-stone-500">
+          <span
+            className={`text-[11px] font-medium ${
+              over ? "text-rose-500 dark:text-rose-400" : "text-stone-400 dark:text-stone-500"
+            }`}
+          >
             {sublabel}
           </span>
         )}

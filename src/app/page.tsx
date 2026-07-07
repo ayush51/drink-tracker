@@ -126,8 +126,22 @@ export default function TrackPage() {
 
   const totalCalories = logs.reduce((sum, l) => sum + l.calories, 0);
   const totalStd = logs.reduce((sum, l) => sum + l.standard_drinks, 0);
-  const goal = profile.dailyGoalDrinks;
-  const overGoal = goal > 0 && totalStd > goal;
+  const limit = profile.dailyLimitDrinks;
+  const overLimit = limit > 0 && totalStd > limit;
+
+  // Center of the ring: countdown toward the limit, or a plain tally if no limit set.
+  let ringLabel: string;
+  let ringSublabel: string;
+  if (limit <= 0) {
+    ringLabel = totalStd.toFixed(1);
+    ringSublabel = "drinks";
+  } else if (overLimit) {
+    ringLabel = `+${(totalStd - limit).toFixed(1)}`;
+    ringSublabel = "over limit";
+  } else {
+    ringLabel = (limit - totalStd).toFixed(1);
+    ringSublabel = "left today";
+  }
 
   return (
     <main className="space-y-6">
@@ -137,12 +151,7 @@ export default function TrackPage() {
           {greetingFor(profile.name)} 👋
         </p>
         <div className="mt-3 flex items-center gap-5">
-          <ProgressRing
-            value={totalStd}
-            goal={goal}
-            label={totalStd.toFixed(1)}
-            sublabel={goal > 0 ? `of ${goal} goal` : "drinks"}
-          />
+          <ProgressRing value={totalStd} goal={limit} label={ringLabel} sublabel={ringSublabel} />
           <div className="flex-1 space-y-3">
             <div>
               <div className="text-2xl font-bold text-stone-900 dark:text-stone-50">
@@ -160,9 +169,9 @@ export default function TrackPage() {
             </div>
           </div>
         </div>
-        {overGoal && (
+        {overLimit && (
           <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
-            You&apos;re over your daily goal of {goal} standard drinks.
+            You&apos;re over your daily limit of {limit} standard drink{limit === 1 ? "" : "s"}.
           </p>
         )}
       </section>
