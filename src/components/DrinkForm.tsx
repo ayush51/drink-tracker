@@ -15,8 +15,20 @@ type Props = {
 const inputCls =
   "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 dark:border-stone-700 dark:bg-stone-900";
 
+const ML_PER_FLOZ = 29.5735;
+
 export default function DrinkForm({ value, onChange, onSave, onCancel, saving, aiNote }: Props) {
   const std = estimateStandardDrinks(Number(value.volume_ml), Number(value.abv_percent));
+  const flOz = value.volume_ml ? Math.round((value.volume_ml / ML_PER_FLOZ) * 10) / 10 : 0;
+
+  // Changing the volume rescales calories proportionally (keeps calories-per-ml constant).
+  function setVolume(rawMl: number) {
+    const newMl = Math.max(0, Math.round(rawMl));
+    const oldMl = Number(value.volume_ml) || 0;
+    const oldCal = Number(value.calories) || 0;
+    const calories = oldMl > 0 && newMl > 0 ? Math.round(oldCal * (newMl / oldMl)) : oldCal;
+    onChange({ ...value, volume_ml: newMl, calories });
+  }
 
   return (
     <div className="space-y-3">
@@ -51,16 +63,29 @@ export default function DrinkForm({ value, onChange, onSave, onCancel, saving, a
         </select>
       </label>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
           Volume (ml)
           <input
             type="number"
             className={inputCls}
             value={value.volume_ml}
-            onChange={(e) => onChange({ ...value, volume_ml: Number(e.target.value) })}
+            onChange={(e) => setVolume(Number(e.target.value))}
           />
         </label>
+        <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+          Volume (fl oz)
+          <input
+            type="number"
+            step="0.1"
+            className={inputCls}
+            value={flOz}
+            onChange={(e) => setVolume(Number(e.target.value) * ML_PER_FLOZ)}
+          />
+        </label>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
         <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
           ABV (%)
           <input
@@ -83,7 +108,8 @@ export default function DrinkForm({ value, onChange, onSave, onCancel, saving, a
       </div>
 
       <p className="text-xs text-stone-400 dark:text-stone-500">
-        ≈ {std.toFixed(1)} standard drink{std.toFixed(1) === "1.0" ? "" : "s"}
+        ≈ {std.toFixed(1)} standard drink{std.toFixed(1) === "1.0" ? "" : "s"} · calories adjust with
+        volume
       </p>
 
       <div className="flex gap-2 pt-1">

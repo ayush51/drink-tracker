@@ -19,6 +19,7 @@ export default function TrackPage() {
   const [pendingImage, setPendingImage] = useState<{ image: string; mediaType: string } | null>(
     null
   );
+  const [hint, setHint] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [draft, setDraft] = useState<AnalyzedDrink>(blankDraft());
@@ -35,6 +36,7 @@ export default function TrackPage() {
     setMode("idle");
     setPreviewUrl(null);
     setPendingImage(null);
+    setHint("");
     setDraft(blankDraft());
     setAiNote(undefined);
     setAnalyzeError(null);
@@ -59,7 +61,7 @@ export default function TrackPage() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(pendingImage),
+        body: JSON.stringify({ ...pendingImage, hint: hint.trim() }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -192,13 +194,25 @@ export default function TrackPage() {
             </label>
 
             {pendingImage && (
-              <button
-                onClick={handleAnalyze}
-                disabled={analyzing}
-                className="mt-3 w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
-              >
-                {analyzing ? "Analyzing…" : "Analyze photo"}
-              </button>
+              <>
+                <input
+                  type="text"
+                  value={hint}
+                  onChange={(e) => setHint(e.target.value)}
+                  placeholder="Optional note — e.g. draft IPA, 16 fl oz"
+                  className="mt-3 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 dark:border-stone-700 dark:bg-stone-900"
+                />
+                <p className="mt-1 px-1 text-[11px] text-stone-400">
+                  Helpful when there&apos;s no label — like a draft beer in a glass.
+                </p>
+                <button
+                  onClick={handleAnalyze}
+                  disabled={analyzing}
+                  className="mt-2 w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
+                >
+                  {analyzing ? "Analyzing…" : "Analyze photo"}
+                </button>
+              </>
             )}
             {analyzeError && <p className="mt-2 text-sm text-rose-600">{analyzeError}</p>}
 

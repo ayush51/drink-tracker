@@ -24,10 +24,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { image, mediaType } = await req.json();
+  const { image, mediaType, hint } = await req.json();
   if (!image) {
     return NextResponse.json({ error: "No image provided" }, { status: 400 });
   }
+
+  const trimmedHint = typeof hint === "string" ? hint.trim() : "";
+  const promptText = trimmedHint
+    ? `${PROMPT}\n\nThe user added this note about the drink — trust it, as it may give the exact name or serving size (e.g. "16 fl oz" ≈ 473 ml, "12 fl oz" ≈ 355 ml, "1 pint" ≈ 473 ml): "${trimmedHint}"`
+    : PROMPT;
 
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -36,7 +41,7 @@ export async function POST(req: NextRequest) {
     const response = await ai.models.generateContent({
       model: MODEL,
       contents: [
-        { text: PROMPT },
+        { text: promptText },
         { inlineData: { mimeType: mediaType || "image/jpeg", data: image } },
       ],
       config: { responseMimeType: "application/json" },
