@@ -14,6 +14,7 @@ import {
   last7Series,
   moneySavedLast7,
   thisWeek,
+  badges,
 } from "@/lib/stats";
 import DrinkListItem from "@/components/DrinkListItem";
 import WeeklyChart from "@/components/WeeklyChart";
@@ -53,6 +54,7 @@ export default function HistoryPage() {
   const busiestDay = useMemo(() => topWeekday(logs), [logs]);
   const saved = moneySavedLast7(recent, profile.costPerDrink, profile.baselineWeeklyDrinks);
   const week = useMemo(() => thisWeek(logs), [logs]);
+  const earnedBadges = useMemo(() => badges(logs, profile.dailyLimitDrinks), [logs, profile.dailyLimitDrinks]);
   const showWeeklyGoals = profile.weeklyLimitDrinks > 0 || profile.dryDaysGoal > 0;
 
   const weekDelta = recent.last7Std - recent.prev7Std;
@@ -189,6 +191,28 @@ export default function HistoryPage() {
               📅 You tend to drink most on <span className="font-semibold">{busiestDay}s</span>.
             </p>
           )}
+
+          {/* Badges */}
+          <section className="rounded-2xl bg-white p-4 shadow-sm dark:bg-stone-900">
+            <h2 className="mb-3 text-sm font-semibold text-stone-900 dark:text-stone-50">Badges</h2>
+            <div className="grid grid-cols-3 gap-2">
+              {earnedBadges.map((b) => (
+                <div
+                  key={b.id}
+                  className={`flex flex-col items-center gap-1 rounded-xl p-2 text-center ${
+                    b.earned
+                      ? "bg-amber-50 dark:bg-amber-500/10"
+                      : "bg-stone-100 opacity-50 dark:bg-stone-800"
+                  }`}
+                >
+                  <span className={`text-2xl ${b.earned ? "" : "grayscale"}`}>{b.icon}</span>
+                  <span className="text-[10px] font-medium leading-tight text-stone-600 dark:text-stone-300">
+                    {b.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
         </>
       )}
 

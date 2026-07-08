@@ -153,6 +153,54 @@ export function thisWeek(drinks: LogEntry[]): ThisWeek {
   return { std, dryDays, daysElapsed };
 }
 
+/** Total alcohol-free days within the tracked period. */
+function trackedDryDays(drinks: LogEntry[]): number {
+  if (!drinks.length) return 0;
+  const m = stdByDay(drinks);
+  const first = firstLoggedDay(drinks)!;
+  let n = 0;
+  for (let i = 0; i < 400; i++) {
+    const day = dayString(i);
+    if (day < first) break;
+    if ((m.get(day) ?? 0) <= 1e-9) n++;
+  }
+  return n;
+}
+
+export type Badge = { id: string; icon: string; label: string; earned: boolean };
+
+export function badges(drinks: LogEntry[], dailyLimit: number): Badge[] {
+  const under = underLimitStreak(drinks, dailyLimit);
+  const dry = dryStreak(drinks);
+  const dryTotal = trackedDryDays(drinks);
+  return [
+    { id: "first", icon: "🍹", label: "First log", earned: drinks.length > 0 },
+    { id: "streak3", icon: "🔥", label: "3-day streak", earned: under >= 3 },
+    { id: "streak7", icon: "⭐", label: "Week under limit", earned: under >= 7 },
+    { id: "dry1", icon: "🌿", label: "First dry day", earned: dryTotal >= 1 },
+    { id: "dry3", icon: "🍃", label: "3 dry days in a row", earned: dry >= 3 },
+    { id: "dry7", icon: "🏆", label: "Dry week", earned: dry >= 7 },
+  ];
+}
+
+/**
+ * Very rough Widmark BAC estimate for today's drinks. Returns null if not
+ * computable. NOT medical/legal advice — an estimate only.
+ */
+export function estimateBAC(
+  todayDrinks: LogEntry[],
+  weightKg: number,
+  sex: "male" | "female"
+): number | null {
+  if (!weightKg || weightKg <= 0 || todayDrinks.length === 0) return null;
+  const grams = todayDrinks.reduce((s, d) => s + d.standard_drinks, 0) * 14;
+  const r = sex === "female" ? 0.55 : 0.68;
+  const peak = (grams / (weightKg * 1000 * r)) * 100;
+  const first = Math.min(...todayDrinks.map((d) => +new Date(d.created_at)));
+  const hours = Math.max(0, (Date.now() - first) / 3600000);
+  return Math.max(0, peak - 0.015 * hours);
+}
+
 /** Estimated money saved over the last 7 days vs a typical week (0 if not configured). */
 export function moneySavedLast7(
   recent: RecentStats,

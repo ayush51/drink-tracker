@@ -10,6 +10,9 @@ export type Profile = {
   dryDaysGoal: number;
   costPerDrink: number;
   baselineWeeklyDrinks: number;
+  weight: number;
+  weightUnit: "kg" | "lb";
+  sex: "" | "male" | "female";
   onboarded: boolean;
 };
 
@@ -22,6 +25,9 @@ const DEFAULT: Profile = {
   dryDaysGoal: 0,
   costPerDrink: 0,
   baselineWeeklyDrinks: 0,
+  weight: 0,
+  weightUnit: "kg",
+  sex: "",
   onboarded: false,
 };
 
@@ -46,6 +52,9 @@ function read(): Profile {
         dryDaysGoal: parsed.dryDaysGoal ?? DEFAULT.dryDaysGoal,
         costPerDrink: parsed.costPerDrink ?? DEFAULT.costPerDrink,
         baselineWeeklyDrinks: parsed.baselineWeeklyDrinks ?? DEFAULT.baselineWeeklyDrinks,
+        weight: parsed.weight ?? DEFAULT.weight,
+        weightUnit: parsed.weightUnit ?? DEFAULT.weightUnit,
+        sex: parsed.sex ?? DEFAULT.sex,
         // existing users (already have a name) are treated as onboarded
         onboarded: parsed.onboarded ?? Boolean(parsed.name),
       };

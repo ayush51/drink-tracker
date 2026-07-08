@@ -13,7 +13,7 @@ import {
 } from "@/lib/drinks";
 import { useDrinks, addDrink, deleteDrink } from "@/lib/drinkStore";
 import { useProfile, greetingFor } from "@/lib/profile";
-import { underLimitStreak } from "@/lib/stats";
+import { underLimitStreak, estimateBAC } from "@/lib/stats";
 import ProgressRing from "@/components/ProgressRing";
 import DrinkForm from "@/components/DrinkForm";
 import DrinkListItem from "@/components/DrinkListItem";
@@ -144,6 +144,9 @@ export default function TrackPage() {
   const overLimit = limit > 0 && totalStd > limit;
   const streak = underLimitStreak(allDrinks, limit);
 
+  const weightKg = profile.weightUnit === "lb" ? profile.weight * 0.453592 : profile.weight;
+  const bac = profile.sex ? estimateBAC(logs, weightKg, profile.sex) : null;
+
   // Center of the ring: countdown toward the limit, or a plain tally if no limit set.
   let ringLabel: string;
   let ringSublabel: string;
@@ -198,6 +201,21 @@ export default function TrackPage() {
           <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
             You&apos;re over your daily limit of {limit} standard drink{limit === 1 ? "" : "s"}.
           </p>
+        )}
+        {bac !== null && bac > 0 && (
+          <div className="mt-3 rounded-lg bg-stone-100 px-3 py-2 dark:bg-stone-800">
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs font-medium text-stone-500 dark:text-stone-400">
+                Estimated BAC
+              </span>
+              <span className="text-sm font-bold text-stone-900 dark:text-stone-50">
+                ~{bac.toFixed(3)}%
+              </span>
+            </div>
+            <p className="mt-0.5 text-[10px] text-stone-400">
+              Rough estimate only — never use it to decide whether it&apos;s safe to drive.
+            </p>
+          </div>
         )}
       </section>
 

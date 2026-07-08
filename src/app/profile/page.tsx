@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useProfile, saveProfile, type Profile } from "@/lib/profile";
 import { downloadBackup, importBackup } from "@/lib/backup";
+import { useTheme, setTheme, type Theme } from "@/lib/theme";
 
 const inputCls =
   "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 dark:border-stone-700 dark:bg-stone-900";
@@ -10,7 +11,7 @@ const inputCls =
 export default function ProfilePage() {
   const profile = useProfile();
   // Re-seed the form whenever the stored profile changes (e.g. after save).
-  const sig = `${profile.name}|${profile.motto}|${profile.dailyLimitDrinks}|${profile.weeklyLimitDrinks}|${profile.dryDaysGoal}|${profile.costPerDrink}|${profile.baselineWeeklyDrinks}`;
+  const sig = `${profile.name}|${profile.motto}|${profile.dailyLimitDrinks}|${profile.weeklyLimitDrinks}|${profile.dryDaysGoal}|${profile.costPerDrink}|${profile.baselineWeeklyDrinks}|${profile.weight}|${profile.weightUnit}|${profile.sex}`;
   return <ProfileForm key={sig} initial={profile} />;
 }
 
@@ -22,6 +23,9 @@ function ProfileForm({ initial }: { initial: Profile }) {
   const [dryGoal, setDryGoal] = useState(String(initial.dryDaysGoal));
   const [cost, setCost] = useState(String(initial.costPerDrink));
   const [baseline, setBaseline] = useState(String(initial.baselineWeeklyDrinks));
+  const [weight, setWeight] = useState(String(initial.weight || ""));
+  const [weightUnit, setWeightUnit] = useState<"kg" | "lb">(initial.weightUnit);
+  const [sex, setSex] = useState<Profile["sex"]>(initial.sex);
   const [savedAt, setSavedAt] = useState(0);
 
   function handleSave() {
@@ -33,6 +37,9 @@ function ProfileForm({ initial }: { initial: Profile }) {
       dryDaysGoal: Math.min(7, Math.max(0, Number(dryGoal) || 0)),
       costPerDrink: Math.max(0, Number(cost) || 0),
       baselineWeeklyDrinks: Math.max(0, Number(baseline) || 0),
+      weight: Math.max(0, Number(weight) || 0),
+      weightUnit,
+      sex,
       onboarded: true,
     });
     setSavedAt(Date.now());
@@ -149,6 +156,50 @@ function ProfileForm({ initial }: { initial: Profile }) {
           </span>
         </div>
 
+        <div className="mt-5 border-t border-stone-200 pt-4 dark:border-stone-800">
+          <h3 className="mb-3 text-xs font-semibold text-stone-900 dark:text-stone-50">
+            BAC estimate (optional)
+          </h3>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+              Weight
+              <div className="mt-1 flex gap-1">
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 dark:border-stone-700 dark:bg-stone-900"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                />
+                <select
+                  className="rounded-lg border border-stone-300 bg-white px-2 py-2 text-sm outline-none dark:border-stone-700 dark:bg-stone-900"
+                  value={weightUnit}
+                  onChange={(e) => setWeightUnit(e.target.value as "kg" | "lb")}
+                >
+                  <option value="kg">kg</option>
+                  <option value="lb">lb</option>
+                </select>
+              </div>
+            </label>
+            <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+              Sex (for the formula)
+              <select
+                className={inputCls}
+                value={sex}
+                onChange={(e) => setSex(e.target.value as Profile["sex"])}
+              >
+                <option value="">—</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </label>
+          </div>
+          <span className="mt-1 block text-[11px] font-normal text-stone-400">
+            Enables a rough BAC estimate on the Track tab. It&apos;s only an estimate — never use it
+            to decide whether it&apos;s safe to drive.
+          </span>
+        </div>
+
         <button
           onClick={handleSave}
           className="mt-5 w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm"
@@ -162,6 +213,8 @@ function ProfileForm({ initial }: { initial: Profile }) {
         )}
       </section>
 
+      <ThemeControl />
+
       <DataBackup />
 
       <p className="px-2 text-center text-[11px] text-stone-400">
@@ -172,6 +225,35 @@ function ProfileForm({ initial }: { initial: Profile }) {
         Made with 🍸 by Sober Ayush
       </footer>
     </main>
+  );
+}
+
+function ThemeControl() {
+  const theme = useTheme();
+  const options: { value: Theme; label: string }[] = [
+    { value: "system", label: "System" },
+    { value: "light", label: "Light" },
+    { value: "dark", label: "Dark" },
+  ];
+  return (
+    <section className="rounded-3xl bg-white p-5 shadow-sm dark:bg-stone-900">
+      <h2 className="mb-3 text-sm font-semibold text-stone-900 dark:text-stone-50">Appearance</h2>
+      <div className="flex gap-1 rounded-full bg-stone-100 p-1 dark:bg-stone-800">
+        {options.map((o) => (
+          <button
+            key={o.value}
+            onClick={() => setTheme(o.value)}
+            className={`flex-1 rounded-full py-2 text-sm font-medium transition-colors ${
+              theme === o.value
+                ? "bg-white text-stone-900 shadow-sm dark:bg-stone-950 dark:text-stone-50"
+                : "text-stone-500 dark:text-stone-400"
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
