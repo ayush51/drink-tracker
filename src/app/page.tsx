@@ -38,6 +38,14 @@ export default function TrackPage() {
   const [aiNote, setAiNote] = useState<string | undefined>(undefined);
   const [when, setWhen] = useState(nowLocalInput);
   const [editing, setEditing] = useState<LogEntry | null>(null);
+  const [nudge, setNudge] = useState(false);
+
+  function maybeNudge(drink: AnalyzedDrink) {
+    if (Number(drink.abv_percent) > 0) {
+      setNudge(true);
+      setTimeout(() => setNudge(false), 4500);
+    }
+  }
 
   const allDrinks = useDrinks();
   const today = todayLocal();
@@ -117,6 +125,7 @@ export default function TrackPage() {
   function handleSave() {
     if (!draft.name.trim()) return;
     addDrink(draft, fromLocalInput(when));
+    maybeNudge(draft);
     resetCapture();
   }
 
@@ -126,6 +135,7 @@ export default function TrackPage() {
 
   function quickLog(fav: AnalyzedDrink) {
     addDrink(fav);
+    maybeNudge(fav);
   }
 
   const totalCalories = logs.reduce((sum, l) => sum + l.calories, 0);
@@ -322,6 +332,14 @@ export default function TrackPage() {
       </section>
 
       <DrinkEditModal log={editing} onClose={() => setEditing(null)} />
+
+      {nudge && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-20 z-30 flex justify-center px-4">
+          <div className="rounded-full bg-sky-500 px-4 py-2 text-sm font-medium text-white shadow-lg">
+            💧 Logged — have a glass of water too
+          </div>
+        </div>
+      )}
     </main>
   );
 }

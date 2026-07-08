@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useProfile, saveProfile, type Profile } from "@/lib/profile";
+import { downloadBackup, importBackup } from "@/lib/backup";
 
 const inputCls =
   "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 dark:border-stone-700 dark:bg-stone-900";
@@ -161,6 +162,8 @@ function ProfileForm({ initial }: { initial: Profile }) {
         )}
       </section>
 
+      <DataBackup />
+
       <p className="px-2 text-center text-[11px] text-stone-400">
         Your profile and drink history are stored only on this device.
       </p>
@@ -169,5 +172,66 @@ function ProfileForm({ initial }: { initial: Profile }) {
         Made with 🍸 by Sober Ayush
       </footer>
     </main>
+  );
+}
+
+function DataBackup() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = importBackup(String(reader.result));
+      if (result.ok) {
+        setMsg({ ok: true, text: "Restored! Reloading…" });
+        setTimeout(() => window.location.reload(), 700);
+      } else {
+        setMsg({ ok: false, text: result.error ?? "Import failed." });
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
+  return (
+    <section className="rounded-3xl bg-white p-5 shadow-sm dark:bg-stone-900">
+      <h2 className="mb-1 text-sm font-semibold text-stone-900 dark:text-stone-50">Data & backup</h2>
+      <p className="mb-3 text-[11px] text-stone-400">
+        Export a file to back up or move your data to another device, then import it there.
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={downloadBackup}
+          className="flex-1 rounded-full border border-stone-300 py-2.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 dark:border-stone-700 dark:text-stone-200 dark:hover:bg-stone-800"
+        >
+          Export
+        </button>
+        <button
+          onClick={() => fileRef.current?.click()}
+          className="flex-1 rounded-full border border-stone-300 py-2.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 dark:border-stone-700 dark:text-stone-200 dark:hover:bg-stone-800"
+        >
+          Import
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={onFile}
+        />
+      </div>
+      {msg && (
+        <p
+          className={`mt-2 text-center text-xs font-medium ${
+            msg.ok ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+          }`}
+        >
+          {msg.text}
+        </p>
+      )}
+    </section>
   );
 }
