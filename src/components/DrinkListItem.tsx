@@ -6,16 +6,22 @@ import { DRINK_EMOJI } from "@/lib/drinks";
 type Props = {
   log: LogEntry;
   onDelete?: (id: string) => void;
+  onEdit?: (log: LogEntry) => void;
   showTime?: boolean;
 };
 
-export default function DrinkListItem({ log, onDelete, showTime }: Props) {
+export default function DrinkListItem({ log, onDelete, onEdit, showTime }: Props) {
   const time = showTime
     ? new Date(log.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
     : null;
 
   return (
-    <li className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-3 dark:border-stone-800 dark:bg-stone-900">
+    <li
+      onClick={onEdit ? () => onEdit(log) : undefined}
+      className={`flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-3 dark:border-stone-800 dark:bg-stone-900 ${
+        onEdit ? "cursor-pointer transition-colors hover:border-amber-300 dark:hover:border-amber-500/40" : ""
+      }`}
+    >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-xl dark:bg-amber-500/10">
         {DRINK_EMOJI[log.drink_type] ?? "🍹"}
       </span>
@@ -33,7 +39,10 @@ export default function DrinkListItem({ log, onDelete, showTime }: Props) {
       </div>
       {onDelete && (
         <button
-          onClick={() => onDelete(log.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(log.id);
+          }}
           aria-label="Delete entry"
           className="shrink-0 rounded-full p-1.5 text-stone-300 transition-colors hover:bg-rose-50 hover:text-rose-500 dark:text-stone-600 dark:hover:bg-rose-500/10"
         >

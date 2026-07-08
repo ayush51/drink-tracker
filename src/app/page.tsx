@@ -1,14 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { AnalyzedDrink } from "@/lib/types";
-import { todayLocal, fileToBase64, blankDraft } from "@/lib/drinks";
+import type { AnalyzedDrink, LogEntry } from "@/lib/types";
+import {
+  todayLocal,
+  fileToBase64,
+  blankDraft,
+  favoriteDrinks,
+  toLocalInput,
+  fromLocalInput,
+  DRINK_EMOJI,
+} from "@/lib/drinks";
 import { useDrinks, addDrink, deleteDrink } from "@/lib/drinkStore";
 import { useProfile, greetingFor } from "@/lib/profile";
 import { underLimitStreak } from "@/lib/stats";
 import ProgressRing from "@/components/ProgressRing";
 import DrinkForm from "@/components/DrinkForm";
 import DrinkListItem from "@/components/DrinkListItem";
+import DrinkEditModal from "@/components/DrinkEditModal";
+
+const nowLocalInput = () => toLocalInput(new Date().toISOString());
 
 type Mode = "idle" | "photo" | "editing";
 
@@ -25,6 +36,8 @@ export default function TrackPage() {
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [draft, setDraft] = useState<AnalyzedDrink>(blankDraft());
   const [aiNote, setAiNote] = useState<string | undefined>(undefined);
+  const [when, setWhen] = useState(nowLocalInput);
+  const [editing, setEditing] = useState<LogEntry | null>(null);
 
   const allDrinks = useDrinks();
   const today = todayLocal();
@@ -32,12 +45,14 @@ export default function TrackPage() {
     () => allDrinks.filter((d) => todayLocal(new Date(d.created_at)) === today),
     [allDrinks, today]
   );
+  const favorites = useMemo(() => favoriteDrinks(allDrinks), [allDrinks]);
 
   function resetCapture() {
     setMode("idle");
     setPreviewUrl(null);
     setPendingImage(null);
     setHint("");
+    setWhen(nowLocalInput());
     setDraft(blankDraft());
     setAiNote(undefined);
     setAnalyzeError(null);
@@ -49,6 +64,7 @@ export default function TrackPage() {
     setMode("photo");
     setAnalyzeError(null);
     setAiNote(undefined);
+    setWhen(nowLocalInput());
     setPreviewUrl(URL.createObjectURL(file));
     const { image, mediaType } = await fileToBase64(file);
     setPendingImage({ image, mediaType });
@@ -94,17 +110,22 @@ export default function TrackPage() {
     setAiNote(undefined);
     setPreviewUrl(null);
     setPendingImage(null);
+    setWhen(nowLocalInput());
     setMode("editing");
   }
 
   function handleSave() {
     if (!draft.name.trim()) return;
-    addDrink(draft);
+    addDrink(draft, fromLocalInput(when));
     resetCapture();
   }
 
   function handleDelete(id: string) {
     deleteDrink(id);
+  }
+
+  function quickLog(fav: AnalyzedDrink) {
+    addDrink(fav);
   }
 
   const totalCalories = logs.reduce((sum, l) => sum + l.calories, 0);
@@ -235,6 +256,26 @@ export default function TrackPage() {
             >
               Log manually
             </button>
+
+            {favorites.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                  Quick add
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {favorites.map((fav) => (
+                    <button
+                      key={fav.name}
+                      onClick={() => quickLog(fav)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 transition-colors hover:border-amber-400 hover:bg-amber-50 dark:border-stone-700 dark:text-stone-200 dark:hover:bg-amber-500/10"
+                    >
+                      <span>{DRINK_EMOJI[fav.drink_type] ?? "🍹"}</span>
+                      <span className="max-w-[9rem] truncate">{fav.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -249,6 +290,8 @@ export default function TrackPage() {
               onSave={handleSave}
               onCancel={resetCapture}
               aiNote={aiNote}
+              when={when}
+              onWhenChange={setWhen}
             />
           </>
         )}
@@ -266,11 +309,19 @@ export default function TrackPage() {
         ) : (
           <ul className="space-y-2">
             {logs.map((log) => (
-              <DrinkListItem key={log.id} log={log} onDelete={handleDelete} showTime />
+              <DrinkListItem
+                key={log.id}
+                log={log}
+                onDelete={handleDelete}
+                onEdit={setEditing}
+                showTime
+              />
             ))}
           </ul>
         )}
       </section>
+
+      <DrinkEditModal log={editing} onClose={() => setEditing(null)} />
     </main>
   );
 }

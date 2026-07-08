@@ -10,6 +10,10 @@ type Props = {
   onCancel: () => void;
   saving?: boolean;
   aiNote?: string;
+  when?: string;
+  onWhenChange?: (value: string) => void;
+  saveLabel?: string;
+  onDelete?: () => void;
 };
 
 const inputCls =
@@ -17,7 +21,18 @@ const inputCls =
 
 const ML_PER_FLOZ = 29.5735;
 
-export default function DrinkForm({ value, onChange, onSave, onCancel, saving, aiNote }: Props) {
+export default function DrinkForm({
+  value,
+  onChange,
+  onSave,
+  onCancel,
+  saving,
+  aiNote,
+  when,
+  onWhenChange,
+  saveLabel = "Log it",
+  onDelete,
+}: Props) {
   const std = estimateStandardDrinks(Number(value.volume_ml), Number(value.abv_percent));
   const flOz = value.volume_ml ? Math.round((value.volume_ml / ML_PER_FLOZ) * 10) / 10 : 0;
 
@@ -107,6 +122,18 @@ export default function DrinkForm({ value, onChange, onSave, onCancel, saving, a
         </label>
       </div>
 
+      {onWhenChange && (
+        <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+          When
+          <input
+            type="datetime-local"
+            className={inputCls}
+            value={when ?? ""}
+            onChange={(e) => onWhenChange(e.target.value)}
+          />
+        </label>
+      )}
+
       <p className="text-xs text-stone-400 dark:text-stone-500">
         ≈ {std.toFixed(1)} standard drink{std.toFixed(1) === "1.0" ? "" : "s"} · calories adjust with
         volume
@@ -124,9 +151,18 @@ export default function DrinkForm({ value, onChange, onSave, onCancel, saving, a
           disabled={saving || !value.name.trim()}
           className="flex-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
         >
-          {saving ? "Logging…" : "Log it"}
+          {saving ? "Logging…" : saveLabel}
         </button>
       </div>
+
+      {onDelete && (
+        <button
+          onClick={onDelete}
+          className="w-full rounded-full py-2 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+        >
+          Delete this entry
+        </button>
+      )}
     </div>
   );
 }

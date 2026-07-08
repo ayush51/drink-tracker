@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { LogEntry } from "@/lib/types";
 import { todayLocal } from "@/lib/drinks";
 import { useDrinks } from "@/lib/drinkStore";
 import { useProfile } from "@/lib/profile";
+import DrinkEditModal from "@/components/DrinkEditModal";
 import {
   underLimitStreak,
   dryStreak,
@@ -26,6 +27,7 @@ type DayGroup = {
 export default function HistoryPage() {
   const logs = useDrinks();
   const profile = useProfile();
+  const [editing, setEditing] = useState<LogEntry | null>(null);
 
   const groups = useMemo<DayGroup[]>(() => {
     const map = new Map<string, DayGroup>();
@@ -152,11 +154,13 @@ export default function HistoryPage() {
           </div>
           <ul className="space-y-2">
             {g.logs.map((log) => (
-              <DrinkListItem key={log.id} log={log} showTime />
+              <DrinkListItem key={log.id} log={log} onEdit={setEditing} showTime />
             ))}
           </ul>
         </section>
       ))}
+
+      <DrinkEditModal log={editing} onClose={() => setEditing(null)} />
     </main>
   );
 }

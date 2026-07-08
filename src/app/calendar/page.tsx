@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { LogEntry } from "@/lib/types";
 import { todayLocal } from "@/lib/drinks";
 import { useDrinks } from "@/lib/drinkStore";
 import DrinkListItem from "@/components/DrinkListItem";
+import DrinkEditModal from "@/components/DrinkEditModal";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 const MONTHS = [
@@ -20,6 +22,7 @@ export default function CalendarPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth()); // 0-11
   const [selected, setSelected] = useState<string>(todayLocal());
+  const [editing, setEditing] = useState<LogEntry | null>(null);
   const allDrinks = useDrinks();
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -131,11 +134,13 @@ export default function CalendarPage() {
         ) : (
           <ul className="space-y-2">
             {selectedLogs.map((log) => (
-              <DrinkListItem key={log.id} log={log} showTime />
+              <DrinkListItem key={log.id} log={log} onEdit={setEditing} showTime />
             ))}
           </ul>
         )}
       </section>
+
+      <DrinkEditModal log={editing} onClose={() => setEditing(null)} />
     </main>
   );
 }
