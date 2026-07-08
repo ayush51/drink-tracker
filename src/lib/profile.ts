@@ -6,6 +6,8 @@ export type Profile = {
   name: string;
   motto: string;
   dailyLimitDrinks: number;
+  weeklyLimitDrinks: number;
+  dryDaysGoal: number;
   costPerDrink: number;
   baselineWeeklyDrinks: number;
   onboarded: boolean;
@@ -16,6 +18,8 @@ const DEFAULT: Profile = {
   name: "",
   motto: "",
   dailyLimitDrinks: 3,
+  weeklyLimitDrinks: 0,
+  dryDaysGoal: 0,
   costPerDrink: 0,
   baselineWeeklyDrinks: 0,
   onboarded: false,
@@ -38,6 +42,8 @@ function read(): Profile {
         // migrate the old `dailyGoalDrinks` key if present
         dailyLimitDrinks:
           parsed.dailyLimitDrinks ?? parsed.dailyGoalDrinks ?? DEFAULT.dailyLimitDrinks,
+        weeklyLimitDrinks: parsed.weeklyLimitDrinks ?? DEFAULT.weeklyLimitDrinks,
+        dryDaysGoal: parsed.dryDaysGoal ?? DEFAULT.dryDaysGoal,
         costPerDrink: parsed.costPerDrink ?? DEFAULT.costPerDrink,
         baselineWeeklyDrinks: parsed.baselineWeeklyDrinks ?? DEFAULT.baselineWeeklyDrinks,
         // existing users (already have a name) are treated as onboarded

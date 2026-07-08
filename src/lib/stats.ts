@@ -120,6 +120,39 @@ export function last7Series(drinks: LogEntry[]): DayBar[] {
   return out;
 }
 
+function startOfWeek(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay(); // 0 Sun .. 6 Sat
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); // back to Monday
+  return d;
+}
+
+export type ThisWeek = {
+  std: number;
+  dryDays: number;
+  daysElapsed: number;
+};
+
+/** Standard drinks and alcohol-free days for the current calendar week (Mon–today). */
+export function thisWeek(drinks: LogEntry[]): ThisWeek {
+  const start = startOfWeek();
+  const byDay = stdByDay(drinks);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const daysElapsed = Math.floor((+today - +start) / 86400000) + 1;
+  let std = 0;
+  let dryDays = 0;
+  for (let i = 0; i < daysElapsed; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const s = byDay.get(todayLocal(d)) ?? 0;
+    std += s;
+    if (s <= 1e-9) dryDays++;
+  }
+  return { std, dryDays, daysElapsed };
+}
+
 /** Estimated money saved over the last 7 days vs a typical week (0 if not configured). */
 export function moneySavedLast7(
   recent: RecentStats,

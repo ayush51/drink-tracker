@@ -13,6 +13,7 @@ import {
   topWeekday,
   last7Series,
   moneySavedLast7,
+  thisWeek,
 } from "@/lib/stats";
 import DrinkListItem from "@/components/DrinkListItem";
 import WeeklyChart from "@/components/WeeklyChart";
@@ -51,6 +52,8 @@ export default function HistoryPage() {
   const series = useMemo(() => last7Series(logs), [logs]);
   const busiestDay = useMemo(() => topWeekday(logs), [logs]);
   const saved = moneySavedLast7(recent, profile.costPerDrink, profile.baselineWeeklyDrinks);
+  const week = useMemo(() => thisWeek(logs), [logs]);
+  const showWeeklyGoals = profile.weeklyLimitDrinks > 0 || profile.dryDaysGoal > 0;
 
   const weekDelta = recent.last7Std - recent.prev7Std;
   const hasPrev = recent.prev7Std > 0;
@@ -88,6 +91,59 @@ export default function HistoryPage() {
               <div className="text-xs text-stone-400">day{dry === 1 ? "" : "s"} in a row</div>
             </div>
           </section>
+
+          {/* This week's goals */}
+          {showWeeklyGoals && (
+            <section className="space-y-3 rounded-2xl bg-white p-4 shadow-sm dark:bg-stone-900">
+              <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-50">This week</h2>
+
+              {profile.weeklyLimitDrinks > 0 &&
+                (() => {
+                  const over = week.std > profile.weeklyLimitDrinks;
+                  const pct = Math.min(100, (week.std / profile.weeklyLimitDrinks) * 100);
+                  return (
+                    <div>
+                      <div className="mb-1 flex justify-between text-xs">
+                        <span className="text-stone-500 dark:text-stone-400">Weekly limit</span>
+                        <span
+                          className={`font-semibold ${over ? "text-rose-600 dark:text-rose-400" : "text-stone-700 dark:text-stone-200"}`}
+                        >
+                          {week.std.toFixed(1)} / {profile.weeklyLimitDrinks}
+                        </span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
+                        <div
+                          className={`h-full rounded-full ${over ? "bg-rose-500" : "bg-amber-500"}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+
+              {profile.dryDaysGoal > 0 && (
+                <div>
+                  <div className="mb-1 flex justify-between text-xs">
+                    <span className="text-stone-500 dark:text-stone-400">Alcohol-free days</span>
+                    <span
+                      className={`font-semibold ${week.dryDays >= profile.dryDaysGoal ? "text-emerald-600 dark:text-emerald-400" : "text-stone-700 dark:text-stone-200"}`}
+                    >
+                      {week.dryDays} / {profile.dryDaysGoal}
+                      {week.dryDays >= profile.dryDaysGoal ? " 🎉" : ""}
+                    </span>
+                  </div>
+                  <div className="flex gap-1">
+                    {Array.from({ length: profile.dryDaysGoal }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-2 flex-1 rounded-full ${i < week.dryDays ? "bg-emerald-500" : "bg-stone-200 dark:bg-stone-800"}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
 
           {/* Money saved */}
           {saved > 0 && (
