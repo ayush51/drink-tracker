@@ -9,7 +9,7 @@ const inputCls =
 export default function ProfilePage() {
   const profile = useProfile();
   // Re-seed the form whenever the stored profile changes (e.g. after save).
-  const sig = `${profile.name}|${profile.motto}|${profile.dailyLimitDrinks}`;
+  const sig = `${profile.name}|${profile.motto}|${profile.dailyLimitDrinks}|${profile.costPerDrink}|${profile.baselineWeeklyDrinks}`;
   return <ProfileForm key={sig} initial={profile} />;
 }
 
@@ -17,6 +17,8 @@ function ProfileForm({ initial }: { initial: Profile }) {
   const [name, setName] = useState(initial.name);
   const [motto, setMotto] = useState(initial.motto);
   const [limit, setLimit] = useState(String(initial.dailyLimitDrinks));
+  const [cost, setCost] = useState(String(initial.costPerDrink));
+  const [baseline, setBaseline] = useState(String(initial.baselineWeeklyDrinks));
   const [savedAt, setSavedAt] = useState(0);
 
   function handleSave() {
@@ -24,6 +26,8 @@ function ProfileForm({ initial }: { initial: Profile }) {
       name: name.trim(),
       motto: motto.trim(),
       dailyLimitDrinks: Math.max(0, Number(limit) || 0),
+      costPerDrink: Math.max(0, Number(cost) || 0),
+      baselineWeeklyDrinks: Math.max(0, Number(baseline) || 0),
       onboarded: true,
     });
     setSavedAt(Date.now());
@@ -71,6 +75,40 @@ function ProfileForm({ initial }: { initial: Profile }) {
             hide the limit.
           </span>
         </label>
+
+        <div className="mt-5 border-t border-stone-200 pt-4 dark:border-stone-800">
+          <h3 className="mb-3 text-xs font-semibold text-stone-900 dark:text-stone-50">
+            Progress tracking (optional)
+          </h3>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+              Cost per drink ($)
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                className={inputCls}
+                value={cost}
+                onChange={(e) => setCost(e.target.value)}
+              />
+            </label>
+            <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+              Typical week (drinks)
+              <input
+                type="number"
+                min="0"
+                step="1"
+                className={inputCls}
+                value={baseline}
+                onChange={(e) => setBaseline(e.target.value)}
+              />
+            </label>
+          </div>
+          <span className="mt-1 block text-[11px] font-normal text-stone-400">
+            How much a drink usually costs you and how many you used to have per week — powers the
+            &ldquo;money saved&rdquo; card on the History tab.
+          </span>
+        </div>
 
         <button
           onClick={handleSave}

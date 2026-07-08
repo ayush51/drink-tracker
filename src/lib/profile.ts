@@ -6,11 +6,20 @@ export type Profile = {
   name: string;
   motto: string;
   dailyLimitDrinks: number;
+  costPerDrink: number;
+  baselineWeeklyDrinks: number;
   onboarded: boolean;
 };
 
 const KEY = "dt_profile";
-const DEFAULT: Profile = { name: "", motto: "", dailyLimitDrinks: 3, onboarded: false };
+const DEFAULT: Profile = {
+  name: "",
+  motto: "",
+  dailyLimitDrinks: 3,
+  costPerDrink: 0,
+  baselineWeeklyDrinks: 0,
+  onboarded: false,
+};
 
 let cache: Profile = DEFAULT;
 let cacheRaw: string | null = null;
@@ -29,6 +38,8 @@ function read(): Profile {
         // migrate the old `dailyGoalDrinks` key if present
         dailyLimitDrinks:
           parsed.dailyLimitDrinks ?? parsed.dailyGoalDrinks ?? DEFAULT.dailyLimitDrinks,
+        costPerDrink: parsed.costPerDrink ?? DEFAULT.costPerDrink,
+        baselineWeeklyDrinks: parsed.baselineWeeklyDrinks ?? DEFAULT.baselineWeeklyDrinks,
         // existing users (already have a name) are treated as onboarded
         onboarded: parsed.onboarded ?? Boolean(parsed.name),
       };
@@ -48,8 +59,9 @@ function subscribe(cb: () => void) {
   };
 }
 
-export function saveProfile(next: Profile) {
-  window.localStorage.setItem(KEY, JSON.stringify(next));
+export function saveProfile(next: Partial<Profile>) {
+  const merged = { ...read(), ...next };
+  window.localStorage.setItem(KEY, JSON.stringify(merged));
   cacheRaw = null; // force re-parse on next read
   listeners.forEach((l) => l());
 }

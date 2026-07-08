@@ -5,6 +5,7 @@ import type { AnalyzedDrink } from "@/lib/types";
 import { todayLocal, fileToBase64, blankDraft } from "@/lib/drinks";
 import { useDrinks, addDrink, deleteDrink } from "@/lib/drinkStore";
 import { useProfile, greetingFor } from "@/lib/profile";
+import { underLimitStreak } from "@/lib/stats";
 import ProgressRing from "@/components/ProgressRing";
 import DrinkForm from "@/components/DrinkForm";
 import DrinkListItem from "@/components/DrinkListItem";
@@ -110,6 +111,7 @@ export default function TrackPage() {
   const totalStd = logs.reduce((sum, l) => sum + l.standard_drinks, 0);
   const limit = profile.dailyLimitDrinks;
   const overLimit = limit > 0 && totalStd > limit;
+  const streak = underLimitStreak(allDrinks, limit);
 
   // Center of the ring: countdown toward the limit, or a plain tally if no limit set.
   let ringLabel: string;
@@ -135,6 +137,11 @@ export default function TrackPage() {
         {profile.motto && (
           <p className="mt-0.5 text-sm font-semibold italic text-amber-600 dark:text-amber-400">
             “{profile.motto}”
+          </p>
+        )}
+        {streak >= 2 && (
+          <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+            🔥 {streak} days under your limit
           </p>
         )}
         <div className="mt-3 flex items-center gap-5">
