@@ -5,9 +5,9 @@ import {
   useGroup,
   joinGroup,
   leaveGroup,
-  generateCode,
   fetchGroupData,
   socialEnabled,
+  DEFAULT_GROUP,
   type GroupDrink,
   type Member,
 } from "@/lib/group";
@@ -36,23 +36,19 @@ export default function GroupPage() {
     );
   }
 
-  return membership ? (
-    <GroupView code={membership.code} />
-  ) : (
-    <JoinForm />
-  );
+  return membership ? <GroupView code={membership.code} /> : <JoinForm />;
 }
 
 function JoinForm() {
   const [name, setName] = useState("");
-  const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function submit(joinCode: string) {
+  async function submit() {
+    if (!name.trim()) return;
     setBusy(true);
     setError(null);
-    const res = await joinGroup(name, joinCode);
+    const res = await joinGroup(name, DEFAULT_GROUP);
     if (!res.ok) setError(res.error ?? "Could not join.");
     setBusy(false);
   }
@@ -60,55 +56,28 @@ function JoinForm() {
   return (
     <main className="space-y-4">
       <section className="rounded-3xl bg-white p-5 shadow-sm dark:bg-stone-900">
-        <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-50">Join your crew</h2>
+        <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-50">Join the crew</h2>
         <p className="mt-1 text-xs text-stone-400">
-          Enter a code your friends share, or start a new group and send them the code.
+          Enter your name to jump in — you&apos;ll share the leaderboard with everyone.
         </p>
 
         <label className="mt-4 block text-xs font-medium text-stone-500 dark:text-stone-400">
           Your name
           <input
             className={inputCls}
-            placeholder="What friends call you"
+            placeholder="e.g. Ava"
             value={name}
             onChange={(e) => setName(e.target.value)}
-          />
-        </label>
-
-        <label className="mt-3 block text-xs font-medium text-stone-500 dark:text-stone-400">
-          Group code
-          <input
-            className={`${inputCls} uppercase tracking-widest`}
-            placeholder="ABC123"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
           />
         </label>
 
         <button
-          onClick={() => submit(code)}
-          disabled={busy || !name.trim() || !code.trim()}
+          onClick={submit}
+          disabled={busy || !name.trim()}
           className="mt-4 w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
         >
-          {busy ? "Joining…" : "Join group"}
-        </button>
-
-        <div className="my-3 flex items-center gap-3 text-[11px] font-medium uppercase tracking-wide text-stone-400">
-          <span className="h-px flex-1 bg-stone-200 dark:bg-stone-800" />
-          or
-          <span className="h-px flex-1 bg-stone-200 dark:bg-stone-800" />
-        </div>
-
-        <button
-          onClick={() => {
-            const c = generateCode();
-            setCode(c);
-            submit(c);
-          }}
-          disabled={busy || !name.trim()}
-          className="w-full rounded-full border border-stone-300 py-2.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 disabled:opacity-50 dark:border-stone-700 dark:text-stone-200 dark:hover:bg-stone-800"
-        >
-          Start a new group
+          {busy ? "Joining…" : "Join the crew"}
         </button>
 
         {error && <p className="mt-2 text-center text-sm text-rose-600">{error}</p>}
@@ -125,7 +94,6 @@ function GroupView({ code }: { code: string }) {
     drinks: [],
   });
   const [tick, setTick] = useState(0);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -159,25 +127,13 @@ function GroupView({ code }: { code: string }) {
   const topId = board.length >= 2 && board[0].std > 0 ? board[0].id : null;
   const dryId = board.length >= 2 ? board[board.length - 1].id : null;
 
-  function copyCode() {
-    navigator.clipboard?.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
   return (
     <main className="space-y-5">
-      <section className="flex items-center justify-between rounded-3xl bg-gradient-to-r from-amber-500 to-orange-600 p-5 text-white shadow-sm">
-        <div>
-          <div className="text-xs font-medium text-white/80">Group code</div>
-          <div className="text-2xl font-bold tracking-widest">{code}</div>
+      <section className="rounded-3xl bg-gradient-to-r from-amber-500 to-orange-600 p-5 text-white shadow-sm">
+        <div className="text-xs font-medium text-white/80">🍻 The crew</div>
+        <div className="text-2xl font-bold">
+          {data.members.length} {data.members.length === 1 ? "member" : "members"}
         </div>
-        <button
-          onClick={copyCode}
-          className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold ring-1 ring-white/30"
-        >
-          {copied ? "Copied!" : "Share code"}
-        </button>
       </section>
 
       <section>
@@ -186,7 +142,7 @@ function GroupView({ code }: { code: string }) {
         </h2>
         {board.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-stone-300 px-4 py-6 text-center text-sm text-stone-400 dark:border-stone-700">
-            No one&apos;s here yet. Share your code to get the crew in.
+            No one&apos;s logged anything yet — be the first!
           </p>
         ) : (
           <ul className="space-y-2">

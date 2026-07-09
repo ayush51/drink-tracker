@@ -12,6 +12,9 @@ const listeners = new Set<() => void>();
 
 export const socialEnabled = isSupabaseConfigured;
 
+/** Everyone shares one community group — no codes. */
+export const DEFAULT_GROUP = "EVERYONE";
+
 function deviceId(): string {
   let id = localStorage.getItem(DEVICE_KEY);
   if (!id) {
