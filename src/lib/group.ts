@@ -89,11 +89,24 @@ export function leaveGroup() {
   notify();
 }
 
-/** Fire-and-forget: share a locally logged drink to the current group. */
-export async function pushDrinkToGroup(entry: LogEntry) {
-  const m = read();
-  if (!supabase || !m) return;
-  await supabase.from("group_drinks").insert({
+const SYNCED_KEY = "dt_synced_drinks";
+
+function syncedSet(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(SYNCED_KEY) || "[]") as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+function markSynced(ids: string[]) {
+  const s = syncedSet();
+  ids.forEach((id) => s.add(id));
+  localStorage.setItem(SYNCED_KEY, JSON.stringify([...s]));
+}
+
+function rowFor(m: Membership, entry: LogEntry) {
+  return {
     group_code: m.code,
     device_id: m.deviceId,
     name: m.name,
@@ -102,7 +115,26 @@ export async function pushDrinkToGroup(entry: LogEntry) {
     standard_drinks: entry.standard_drinks,
     calories: entry.calories,
     created_at: entry.created_at,
-  });
+  };
+}
+
+/** Fire-and-forget: share a locally logged drink to the current group. */
+export async function pushDrinkToGroup(entry: LogEntry) {
+  const m = read();
+  if (!supabase || !m || syncedSet().has(entry.id)) return;
+  const { error } = await supabase.from("group_drinks").insert(rowFor(m, entry));
+  if (!error) markSynced([entry.id]);
+}
+
+/** Push already-logged drinks (e.g. this week's) to the group, skipping any already synced. */
+export async function backfillDrinks(drinks: LogEntry[]) {
+  const m = read();
+  if (!supabase || !m || drinks.length === 0) return;
+  const synced = syncedSet();
+  const todo = drinks.filter((d) => !synced.has(d.id));
+  if (todo.length === 0) return;
+  const { error } = await supabase.from("group_drinks").insert(todo.map((d) => rowFor(m, d)));
+  if (!error) markSynced(todo.map((d) => d.id));
 }
 
 export type GroupDrink = {

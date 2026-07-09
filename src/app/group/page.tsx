@@ -6,12 +6,19 @@ import {
   joinGroup,
   leaveGroup,
   fetchGroupData,
+  backfillDrinks,
   socialEnabled,
   DEFAULT_GROUP,
   type GroupDrink,
   type Member,
 } from "@/lib/group";
+import { useDrinks } from "@/lib/drinkStore";
 import { DRINK_EMOJI } from "@/lib/drinks";
+
+function thisWeeksDrinks<T extends { created_at: string }>(drinks: T[]): T[] {
+  const start = weekStart();
+  return drinks.filter((d) => new Date(d.created_at) >= start);
+}
 
 function weekStart(): Date {
   const d = new Date();
@@ -40,6 +47,7 @@ export default function GroupPage() {
 }
 
 function JoinForm() {
+  const localDrinks = useDrinks();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +57,13 @@ function JoinForm() {
     setBusy(true);
     setError(null);
     const res = await joinGroup(name, DEFAULT_GROUP);
-    if (!res.ok) setError(res.error ?? "Could not join.");
+    if (!res.ok) {
+      setError(res.error ?? "Could not join.");
+      setBusy(false);
+      return;
+    }
+    // bring this week's already-logged drinks onto the board
+    await backfillDrinks(thisWeeksDrinks(localDrinks));
     setBusy(false);
   }
 
