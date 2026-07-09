@@ -20,6 +20,11 @@ const TABS = [
     icon: "M12 7v5l3 2M4 12a8 8 0 1 0 16 0 8 8 0 0 0-16 0Z",
   },
   {
+    href: "/group",
+    label: "Group",
+    icon: "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3 20a6 6 0 0 1 12 0M16 11a3 3 0 1 0-1-5.8M21 20a6 6 0 0 0-4-5.7",
+  },
+  {
     href: "/profile",
     label: "Profile",
     icon: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 20a7.5 7.5 0 0 1 15 0",

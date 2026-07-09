@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import type { AnalyzedDrink, LogEntry } from "@/lib/types";
 import { estimateStandardDrinks } from "@/lib/drinks";
+import { pushDrinkToGroup } from "@/lib/group";
 
 const KEY = "dt_drinks";
 const EMPTY: LogEntry[] = [];
@@ -66,6 +67,8 @@ export function addDrink(draft: AnalyzedDrink, createdAt?: string): LogEntry {
   };
   // keep the list sorted newest-first even when backdating
   write([entry, ...read()].sort((a, b) => (a.created_at < b.created_at ? 1 : -1)));
+  // share to the group if the user has joined one (best-effort)
+  pushDrinkToGroup(entry).catch(() => {});
   return entry;
 }
 
