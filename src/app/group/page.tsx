@@ -7,10 +7,14 @@ import {
   leaveGroup,
   fetchGroupData,
   backfillDrinks,
+  subscribeToGroup,
+  toggleReaction,
   socialEnabled,
   DEFAULT_GROUP,
   type GroupDrink,
   type Member,
+  type Reaction,
+  type Membership,
 } from "@/lib/group";
 import { useDrinks } from "@/lib/drinkStore";
 import { useProfile } from "@/lib/profile";
@@ -44,8 +48,10 @@ export default function GroupPage() {
     );
   }
 
-  return membership ? <GroupView code={membership.code} /> : <JoinForm />;
+  return membership ? <GroupView membership={membership} /> : <JoinForm />;
 }
+
+const REACTIONS = ["🍻", "🔥", "😂", "👏"];
 
 function JoinForm() {
   const localDrinks = useDrinks();
@@ -131,11 +137,11 @@ function JoinForm() {
 
 type Row = { id: string; name: string; std: number; count: number };
 
-function GroupView({ code }: { code: string }) {
-  const [data, setData] = useState<{ members: Member[]; drinks: GroupDrink[] }>({
-    members: [],
-    drinks: [],
-  });
+function GroupView({ membership }: { membership: Membership }) {
+  const { code, deviceId } = membership;
+  const [data, setData] = useState<{ members: Member[]; drinks: GroupDrink[]; reactions: Reaction[] }>(
+    { members: [], drinks: [], reactions: [] }
+  );
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -148,10 +154,34 @@ function GroupView({ code }: { code: string }) {
     };
   }, [code, tick]);
 
+  // Live updates via Supabase Realtime, plus a slow poll as a fallback.
   useEffect(() => {
-    const t = setInterval(() => setTick((n) => n + 1), 15000);
-    return () => clearInterval(t);
-  }, []);
+    const unsub = subscribeToGroup(code, () => setTick((n) => n + 1));
+    const t = setInterval(() => setTick((n) => n + 1), 30000);
+    return () => {
+      unsub();
+      clearInterval(t);
+    };
+  }, [code]);
+
+  // drink id -> { emoji -> { count, mine } }
+  const reactionsByDrink = useMemo(() => {
+    const map = new Map<string, Map<string, { count: number; mine: boolean }>>();
+    for (const r of data.reactions) {
+      const per = map.get(r.drink_id) ?? new Map();
+      const cur = per.get(r.emoji) ?? { count: 0, mine: false };
+      cur.count += 1;
+      if (r.device_id === deviceId) cur.mine = true;
+      per.set(r.emoji, cur);
+      map.set(r.drink_id, per);
+    }
+    return map;
+  }, [data.reactions, deviceId]);
+
+  function react(drinkId: string, emoji: string) {
+    const mine = reactionsByDrink.get(drinkId)?.get(emoji)?.mine ?? false;
+    toggleReaction(drinkId, emoji, mine).then(() => setTick((n) => n + 1));
+  }
 
   const board = useMemo<Row[]>(() => {
     const start = weekStart();
@@ -237,18 +267,45 @@ function GroupView({ code }: { code: string }) {
             {data.drinks.slice(0, 30).map((d) => (
               <li
                 key={d.id}
-                className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-3 dark:border-stone-800 dark:bg-stone-900"
+                className="rounded-2xl border border-stone-200 bg-white p-3 dark:border-stone-800 dark:bg-stone-900"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-lg dark:bg-amber-500/10">
-                  {DRINK_EMOJI[d.drink_type as keyof typeof DRINK_EMOJI] ?? "🍹"}
-                </span>
-                <div className="min-w-0 flex-1 text-sm">
-                  <span className="font-semibold text-stone-900 dark:text-stone-50">{d.name}</span>{" "}
-                  <span className="text-stone-500 dark:text-stone-400">had a {d.drink_name}</span>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-lg dark:bg-amber-500/10">
+                    {DRINK_EMOJI[d.drink_type as keyof typeof DRINK_EMOJI] ?? "🍹"}
+                  </span>
+                  <div className="min-w-0 flex-1 text-sm">
+                    <span className="font-semibold text-stone-900 dark:text-stone-50">{d.name}</span>{" "}
+                    <span className="text-stone-500 dark:text-stone-400">had a {d.drink_name}</span>
+                  </div>
+                  <span className="shrink-0 text-[11px] text-stone-400">
+                    {new Date(d.created_at).toLocaleDateString([], { month: "short", day: "numeric" })}
+                  </span>
                 </div>
-                <span className="shrink-0 text-[11px] text-stone-400">
-                  {new Date(d.created_at).toLocaleDateString([], { month: "short", day: "numeric" })}
-                </span>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {REACTIONS.map((emoji) => {
+                    const info = reactionsByDrink.get(d.id)?.get(emoji);
+                    const count = info?.count ?? 0;
+                    const mine = info?.mine ?? false;
+                    return (
+                      <button
+                        key={emoji}
+                        onClick={() => react(d.id, emoji)}
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors ${
+                          mine
+                            ? "border-amber-400 bg-amber-50 dark:bg-amber-500/10"
+                            : "border-stone-200 hover:border-stone-300 dark:border-stone-700"
+                        }`}
+                      >
+                        <span>{emoji}</span>
+                        {count > 0 && (
+                          <span className="text-[11px] font-semibold text-stone-500 dark:text-stone-400">
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </li>
             ))}
           </ul>

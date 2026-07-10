@@ -148,12 +148,13 @@ export type GroupDrink = {
   created_at: string;
 };
 export type Member = { device_id: string; name: string };
+export type Reaction = { id: string; drink_id: string; device_id: string; emoji: string };
 
 export async function fetchGroupData(
   code: string
-): Promise<{ members: Member[]; drinks: GroupDrink[] }> {
-  if (!supabase) return { members: [], drinks: [] };
-  const [mRes, dRes] = await Promise.all([
+): Promise<{ members: Member[]; drinks: GroupDrink[]; reactions: Reaction[] }> {
+  if (!supabase) return { members: [], drinks: [], reactions: [] };
+  const [mRes, dRes, rRes] = await Promise.all([
     supabase.from("members").select("device_id,name").eq("group_code", code),
     supabase
       .from("group_drinks")
@@ -161,6 +162,41 @@ export async function fetchGroupData(
       .eq("group_code", code)
       .order("created_at", { ascending: false })
       .limit(200),
+    supabase.from("reactions").select("id,drink_id,device_id,emoji").eq("group_code", code),
   ]);
-  return { members: mRes.data ?? [], drinks: (dRes.data as GroupDrink[]) ?? [] };
+  return {
+    members: mRes.data ?? [],
+    drinks: (dRes.data as GroupDrink[]) ?? [],
+    reactions: (rRes.data as Reaction[]) ?? [],
+  };
+}
+
+/** Live updates: fire `onChange` whenever the group's drinks, members, or reactions change. */
+export function subscribeToGroup(code: string, onChange: () => void): () => void {
+  if (!supabase) return () => {};
+  const filter = `group_code=eq.${code}`;
+  const channel = supabase
+    .channel(`group-${code}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "group_drinks", filter }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "members", filter }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "reactions", filter }, onChange)
+    .subscribe();
+  return () => {
+    supabase?.removeChannel(channel);
+  };
+}
+
+export async function toggleReaction(drinkId: string, emoji: string, hasReacted: boolean) {
+  const m = read();
+  if (!supabase || !m) return;
+  if (hasReacted) {
+    await supabase
+      .from("reactions")
+      .delete()
+      .match({ drink_id: drinkId, device_id: m.deviceId, emoji });
+  } else {
+    await supabase
+      .from("reactions")
+      .insert({ drink_id: drinkId, group_code: m.code, device_id: m.deviceId, emoji });
+  }
 }
