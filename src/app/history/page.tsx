@@ -6,18 +6,8 @@ import { todayLocal } from "@/lib/drinks";
 import { useDrinks } from "@/lib/drinkStore";
 import { useProfile } from "@/lib/profile";
 import DrinkEditModal from "@/components/DrinkEditModal";
-import {
-  underLimitStreak,
-  dryStreak,
-  recentStats,
-  topWeekday,
-  last7Series,
-  moneySavedLast7,
-  thisWeek,
-  badges,
-} from "@/lib/stats";
+import { recentStats, moneySavedLast7, thisWeek } from "@/lib/stats";
 import DrinkListItem from "@/components/DrinkListItem";
-import WeeklyChart from "@/components/WeeklyChart";
 
 type DayGroup = {
   date: string;
@@ -44,21 +34,10 @@ export default function HistoryPage() {
     return [...map.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
   }, [logs]);
 
-  const limitStreak = useMemo(
-    () => underLimitStreak(logs, profile.dailyLimitDrinks),
-    [logs, profile.dailyLimitDrinks]
-  );
-  const dry = useMemo(() => dryStreak(logs), [logs]);
   const recent = useMemo(() => recentStats(logs), [logs]);
-  const series = useMemo(() => last7Series(logs), [logs]);
-  const busiestDay = useMemo(() => topWeekday(logs), [logs]);
   const saved = moneySavedLast7(recent, profile.costPerDrink, profile.baselineWeeklyDrinks);
   const week = useMemo(() => thisWeek(logs), [logs]);
-  const earnedBadges = useMemo(() => badges(logs, profile.dailyLimitDrinks), [logs, profile.dailyLimitDrinks]);
   const showWeeklyGoals = profile.weeklyLimitDrinks > 0 || profile.dryDaysGoal > 0;
-
-  const weekDelta = recent.last7Std - recent.prev7Std;
-  const hasPrev = recent.prev7Std > 0;
 
   function labelFor(date: string) {
     if (date === todayLocal()) return "Today";
@@ -76,144 +55,66 @@ export default function HistoryPage() {
 
   return (
     <main className="space-y-5">
-      {hasData && (
-        <>
-          {/* Streaks */}
-          <section className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-stone-900">
-              <div className="text-xs text-stone-500 dark:text-stone-400">🔥 Under your limit</div>
-              <div className="mt-1 text-2xl font-bold text-stone-900 dark:text-stone-50">
-                {limitStreak}
-              </div>
-              <div className="text-xs text-stone-400">day{limitStreak === 1 ? "" : "s"} in a row</div>
-            </div>
-            <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-stone-900">
-              <div className="text-xs text-stone-500 dark:text-stone-400">🌿 Alcohol-free</div>
-              <div className="mt-1 text-2xl font-bold text-stone-900 dark:text-stone-50">{dry}</div>
-              <div className="text-xs text-stone-400">day{dry === 1 ? "" : "s"} in a row</div>
-            </div>
-          </section>
+      {hasData && showWeeklyGoals && (
+        <section className="space-y-3 rounded-2xl bg-white p-4 shadow-sm dark:bg-stone-900">
+          <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-50">This week</h2>
 
-          {/* This week's goals */}
-          {showWeeklyGoals && (
-            <section className="space-y-3 rounded-2xl bg-white p-4 shadow-sm dark:bg-stone-900">
-              <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-50">This week</h2>
-
-              {profile.weeklyLimitDrinks > 0 &&
-                (() => {
-                  const over = week.std > profile.weeklyLimitDrinks;
-                  const pct = Math.min(100, (week.std / profile.weeklyLimitDrinks) * 100);
-                  return (
-                    <div>
-                      <div className="mb-1 flex justify-between text-xs">
-                        <span className="text-stone-500 dark:text-stone-400">Weekly limit</span>
-                        <span
-                          className={`font-semibold ${over ? "text-rose-600 dark:text-rose-400" : "text-stone-700 dark:text-stone-200"}`}
-                        >
-                          {week.std.toFixed(1)} / {profile.weeklyLimitDrinks}
-                        </span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
-                        <div
-                          className={`h-full rounded-full ${over ? "bg-rose-500" : "bg-amber-500"}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })()}
-
-              {profile.dryDaysGoal > 0 && (
+          {profile.weeklyLimitDrinks > 0 &&
+            (() => {
+              const over = week.std > profile.weeklyLimitDrinks;
+              const pct = Math.min(100, (week.std / profile.weeklyLimitDrinks) * 100);
+              return (
                 <div>
                   <div className="mb-1 flex justify-between text-xs">
-                    <span className="text-stone-500 dark:text-stone-400">Alcohol-free days</span>
+                    <span className="text-stone-500 dark:text-stone-400">Weekly limit</span>
                     <span
-                      className={`font-semibold ${week.dryDays >= profile.dryDaysGoal ? "text-emerald-600 dark:text-emerald-400" : "text-stone-700 dark:text-stone-200"}`}
+                      className={`font-semibold ${over ? "text-rose-600 dark:text-rose-400" : "text-stone-700 dark:text-stone-200"}`}
                     >
-                      {week.dryDays} / {profile.dryDaysGoal}
-                      {week.dryDays >= profile.dryDaysGoal ? " 🎉" : ""}
+                      {week.std.toFixed(1)} / {profile.weeklyLimitDrinks}
                     </span>
                   </div>
-                  <div className="flex gap-1">
-                    {Array.from({ length: profile.dryDaysGoal }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={`h-2 flex-1 rounded-full ${i < week.dryDays ? "bg-emerald-500" : "bg-stone-200 dark:bg-stone-800"}`}
-                      />
-                    ))}
+                  <div className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
+                    <div
+                      className={`h-full rounded-full ${over ? "bg-rose-500" : "bg-amber-500"}`}
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
                 </div>
-              )}
-            </section>
-          )}
+              );
+            })()}
 
-          {/* Money saved */}
-          {saved > 0 && (
-            <section className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 p-4 text-white shadow-sm">
-              <div className="text-xs font-medium text-white/85">💰 Saved this week</div>
-              <div className="mt-1 text-2xl font-bold">${Math.round(saved)}</div>
-              <div className="text-xs text-white/80">
-                vs your usual {profile.baselineWeeklyDrinks} drinks/week
-              </div>
-            </section>
-          )}
-
-          {/* Weekly chart */}
-          <section className="rounded-2xl bg-white p-4 shadow-sm dark:bg-stone-900">
-            <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-50">
-                Last 7 days
-              </h2>
-              {hasPrev && (
+          {profile.dryDaysGoal > 0 && (
+            <div>
+              <div className="mb-1 flex justify-between text-xs">
+                <span className="text-stone-500 dark:text-stone-400">Alcohol-free days</span>
                 <span
-                  className={`text-xs font-medium ${
-                    weekDelta > 0
-                      ? "text-rose-500"
-                      : weekDelta < 0
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-stone-400"
-                  }`}
+                  className={`font-semibold ${week.dryDays >= profile.dryDaysGoal ? "text-emerald-600 dark:text-emerald-400" : "text-stone-700 dark:text-stone-200"}`}
                 >
-                  {weekDelta > 0 ? "▲" : weekDelta < 0 ? "▼" : "•"}{" "}
-                  {Math.abs(weekDelta).toFixed(1)} vs last week
+                  {week.dryDays} / {profile.dryDaysGoal}
+                  {week.dryDays >= profile.dryDaysGoal ? " 🎉" : ""}
                 </span>
-              )}
+              </div>
+              <div className="flex gap-1">
+                {Array.from({ length: profile.dryDaysGoal }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`h-2 flex-1 rounded-full ${i < week.dryDays ? "bg-emerald-500" : "bg-stone-200 dark:bg-stone-800"}`}
+                  />
+                ))}
+              </div>
             </div>
-            <WeeklyChart data={series} limit={profile.dailyLimitDrinks} />
-            <div className="mt-3 flex justify-between text-xs text-stone-500 dark:text-stone-400">
-              <span>{recent.last7Std.toFixed(1)} std drinks</span>
-              <span>{Math.round(recent.last7Calories)} cal</span>
-            </div>
-          </section>
-
-          {busiestDay && (
-            <p className="px-1 text-xs text-stone-500 dark:text-stone-400">
-              📅 You tend to drink most on <span className="font-semibold">{busiestDay}s</span>.
-            </p>
           )}
+        </section>
+      )}
 
-          {/* Badges */}
-          <section className="rounded-2xl bg-white p-4 shadow-sm dark:bg-stone-900">
-            <h2 className="mb-3 text-sm font-semibold text-stone-900 dark:text-stone-50">Badges</h2>
-            <div className="grid grid-cols-3 gap-2">
-              {earnedBadges.map((b) => (
-                <div
-                  key={b.id}
-                  className={`flex flex-col items-center gap-1 rounded-xl p-2 text-center ${
-                    b.earned
-                      ? "bg-amber-50 dark:bg-amber-500/10"
-                      : "bg-stone-100 opacity-50 dark:bg-stone-800"
-                  }`}
-                >
-                  <span className={`text-2xl ${b.earned ? "" : "grayscale"}`}>{b.icon}</span>
-                  <span className="text-[10px] font-medium leading-tight text-stone-600 dark:text-stone-300">
-                    {b.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        </>
+      {hasData && saved > 0 && (
+        <section className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 p-4 text-white shadow-sm">
+          <div className="text-xs font-medium text-white/85">💰 Saved this week</div>
+          <div className="mt-1 text-2xl font-bold">${Math.round(saved)}</div>
+          <div className="text-xs text-white/80">
+            vs your usual {profile.baselineWeeklyDrinks} drinks/week
+          </div>
+        </section>
       )}
 
       {!hasData && (

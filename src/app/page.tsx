@@ -18,6 +18,7 @@ import ProgressRing from "@/components/ProgressRing";
 import DrinkForm from "@/components/DrinkForm";
 import DrinkListItem from "@/components/DrinkListItem";
 import DrinkEditModal from "@/components/DrinkEditModal";
+import Insights from "@/components/Insights";
 
 const nowLocalInput = () => toLocalInput(new Date().toISOString());
 
@@ -37,6 +38,7 @@ export default function TrackPage() {
   const [draft, setDraft] = useState<AnalyzedDrink>(blankDraft());
   const [aiNote, setAiNote] = useState<string | undefined>(undefined);
   const [when, setWhen] = useState(nowLocalInput);
+  const [quantity, setQuantity] = useState(1);
   const [editing, setEditing] = useState<LogEntry | null>(null);
   const [nudge, setNudge] = useState(false);
 
@@ -61,6 +63,7 @@ export default function TrackPage() {
     setPendingImage(null);
     setHint("");
     setWhen(nowLocalInput());
+    setQuantity(1);
     setDraft(blankDraft());
     setAiNote(undefined);
     setAnalyzeError(null);
@@ -119,12 +122,15 @@ export default function TrackPage() {
     setPreviewUrl(null);
     setPendingImage(null);
     setWhen(nowLocalInput());
+    setQuantity(1);
     setMode("editing");
   }
 
   function handleSave() {
     if (!draft.name.trim()) return;
-    addDrink(draft, fromLocalInput(when));
+    const iso = fromLocalInput(when);
+    const n = Math.min(20, Math.max(1, quantity));
+    for (let i = 0; i < n; i++) addDrink(draft, iso);
     maybeNudge(draft);
     resetCapture();
   }
@@ -243,7 +249,6 @@ export default function TrackPage() {
               <input
                 type="file"
                 accept="image/*"
-                capture="environment"
                 className="hidden"
                 onChange={handleFileChange}
               />
@@ -320,6 +325,8 @@ export default function TrackPage() {
               aiNote={aiNote}
               when={when}
               onWhenChange={setWhen}
+              quantity={quantity}
+              onQuantityChange={setQuantity}
             />
           </>
         )}
@@ -348,6 +355,8 @@ export default function TrackPage() {
           </ul>
         )}
       </section>
+
+      <Insights />
 
       <DrinkEditModal log={editing} onClose={() => setEditing(null)} />
 

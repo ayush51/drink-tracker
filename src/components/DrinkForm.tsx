@@ -12,6 +12,8 @@ type Props = {
   aiNote?: string;
   when?: string;
   onWhenChange?: (value: string) => void;
+  quantity?: number;
+  onQuantityChange?: (n: number) => void;
   saveLabel?: string;
   onDelete?: () => void;
 };
@@ -30,6 +32,8 @@ export default function DrinkForm({
   aiNote,
   when,
   onWhenChange,
+  quantity,
+  onQuantityChange,
   saveLabel = "Log it",
   onDelete,
 }: Props) {
@@ -122,6 +126,23 @@ export default function DrinkForm({
         </label>
       </div>
 
+      {onQuantityChange && (
+        <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+          How many? (optional)
+          <input
+            type="number"
+            min="1"
+            step="1"
+            className={inputCls}
+            value={quantity ?? 1}
+            onChange={(e) => onQuantityChange(Math.max(1, Math.floor(Number(e.target.value)) || 1))}
+          />
+          <span className="mt-1 block text-[11px] font-normal text-stone-400">
+            Logs this drink multiple times at once.
+          </span>
+        </label>
+      )}
+
       {onWhenChange && (
         <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
           When
@@ -151,7 +172,7 @@ export default function DrinkForm({
           disabled={saving || !value.name.trim()}
           className="flex-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
         >
-          {saving ? "Logging…" : saveLabel}
+          {saving ? "Logging…" : quantity && quantity > 1 ? `Log ${quantity}` : saveLabel}
         </button>
       </div>
 
