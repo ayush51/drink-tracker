@@ -13,6 +13,7 @@ import {
   type Member,
 } from "@/lib/group";
 import { useDrinks } from "@/lib/drinkStore";
+import { useProfile } from "@/lib/profile";
 import { DRINK_EMOJI } from "@/lib/drinks";
 
 function thisWeeksDrinks<T extends { created_at: string }>(drinks: T[]): T[] {
@@ -48,15 +49,20 @@ export default function GroupPage() {
 
 function JoinForm() {
   const localDrinks = useDrinks();
+  const profile = useProfile();
+  const [override, setOverride] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function submit() {
-    if (!name.trim()) return;
+  const usingProfileName = Boolean(profile.name) && !override;
+
+  async function submit(joinName?: string) {
+    const n = (joinName ?? name).trim();
+    if (!n) return;
     setBusy(true);
     setError(null);
-    const res = await joinGroup(name, DEFAULT_GROUP);
+    const res = await joinGroup(n, DEFAULT_GROUP);
     if (!res.ok) {
       setError(res.error ?? "Could not join.");
       setBusy(false);
@@ -72,27 +78,50 @@ function JoinForm() {
       <section className="rounded-3xl bg-white p-5 shadow-sm dark:bg-stone-900">
         <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-50">Join the crew</h2>
         <p className="mt-1 text-xs text-stone-400">
-          Enter your name to jump in — you&apos;ll share the leaderboard with everyone.
+          Share the weekly leaderboard with everyone using Sip Happens.
         </p>
 
-        <label className="mt-4 block text-xs font-medium text-stone-500 dark:text-stone-400">
-          Your name
-          <input
-            className={inputCls}
-            placeholder="e.g. Ava"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-          />
-        </label>
-
-        <button
-          onClick={submit}
-          disabled={busy || !name.trim()}
-          className="mt-4 w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
-        >
-          {busy ? "Joining…" : "Join the crew"}
-        </button>
+        {usingProfileName ? (
+          <>
+            <button
+              onClick={() => submit(profile.name)}
+              disabled={busy}
+              className="mt-4 w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
+            >
+              {busy ? "Joining…" : `Join as ${profile.name}`}
+            </button>
+            <button
+              onClick={() => {
+                setOverride(true);
+                setName("");
+              }}
+              className="mt-2 w-full text-center text-xs font-medium text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"
+            >
+              Use a different name
+            </button>
+          </>
+        ) : (
+          <>
+            <label className="mt-4 block text-xs font-medium text-stone-500 dark:text-stone-400">
+              Your name
+              <input
+                className={inputCls}
+                placeholder="e.g. Ava"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && submit()}
+                autoFocus
+              />
+            </label>
+            <button
+              onClick={() => submit()}
+              disabled={busy || !name.trim()}
+              className="mt-4 w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
+            >
+              {busy ? "Joining…" : "Join the crew"}
+            </button>
+          </>
+        )}
 
         {error && <p className="mt-2 text-center text-sm text-rose-600">{error}</p>}
       </section>
