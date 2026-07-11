@@ -92,7 +92,7 @@ function JoinForm() {
             <button
               onClick={() => submit(profile.name)}
               disabled={busy}
-              className="mt-4 w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
+              className="mt-4 w-full rounded-full bg-gradient-to-r from-[var(--accent-from)] to-[var(--accent-to)] py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
             >
               {busy ? "Joining…" : `Join as ${profile.name}`}
             </button>
@@ -122,7 +122,7 @@ function JoinForm() {
             <button
               onClick={() => submit()}
               disabled={busy || !name.trim()}
-              className="mt-4 w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
+              className="mt-4 w-full rounded-full bg-gradient-to-r from-[var(--accent-from)] to-[var(--accent-to)] py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
             >
               {busy ? "Joining…" : "Join the crew"}
             </button>
@@ -202,7 +202,7 @@ function GroupView({ membership }: { membership: Membership }) {
 
   return (
     <main className="space-y-5">
-      <section className="rounded-3xl bg-gradient-to-r from-amber-500 to-orange-600 p-5 text-white shadow-sm">
+      <section className="rounded-3xl bg-gradient-to-r from-[var(--accent-from)] to-[var(--accent-to)] p-5 text-white shadow-sm">
         <div className="text-xs font-medium text-white/80">🍻 The crew</div>
         <div className="text-2xl font-bold">
           {data.members.length} {data.members.length === 1 ? "member" : "members"}

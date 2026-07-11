@@ -6,11 +6,21 @@
 :root {
   --background: #faf8f5;
   --foreground: #1c1917;
+  --accent-from: #f59e0b;
+  --accent-to: #ea580c;
+  --accent-solid: #f59e0b;
 }
 
 .dark {
   --background: #0c0a09;
   --foreground: #f5f5f4;
+}
+
+/* Weed mode: green/violet reskin, applied to <html> via lib/mode.ts */
+.weed {
+  --accent-from: #22c55e;
+  --accent-to: #7c3aed;
+  --accent-solid: #16a34a;
 }
 
 @theme inline {

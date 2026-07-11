@@ -31,7 +31,8 @@ export default function ProgressRing({ value, goal, label, sublabel }: Props) {
           strokeWidth="10"
           strokeLinecap="round"
           strokeDasharray={`${dash} ${circumference}`}
-          className={over ? "stroke-rose-500" : "stroke-amber-500"}
+          className={over ? "stroke-rose-500" : ""}
+          style={over ? undefined : { stroke: "var(--accent-solid)" }}
         />
       </svg>
       <div className="absolute flex flex-col items-center">

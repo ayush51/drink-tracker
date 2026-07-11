@@ -1,11 +1,11 @@
 "use client";
 
-import type { AnalyzedDrink, DrinkType } from "@/lib/types";
-import { DRINK_TYPES, estimateStandardDrinks } from "@/lib/drinks";
+import type { AnalyzedSession, SessionMethod } from "@/lib/types";
+import { SESSION_METHODS } from "@/lib/weed";
 
 type Props = {
-  value: AnalyzedDrink;
-  onChange: (next: AnalyzedDrink) => void;
+  value: AnalyzedSession;
+  onChange: (next: AnalyzedSession) => void;
   onSave: () => void;
   onCancel: () => void;
   saving?: boolean;
@@ -19,11 +19,9 @@ type Props = {
 };
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 dark:border-stone-700 dark:bg-stone-900";
+  "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--accent-solid)] focus:ring-2 focus:ring-[var(--accent-solid)]/30 dark:border-stone-700 dark:bg-stone-900";
 
-const ML_PER_FLOZ = 29.5735;
-
-export default function DrinkForm({
+export default function WeedForm({
   value,
   onChange,
   onSave,
@@ -37,22 +35,13 @@ export default function DrinkForm({
   saveLabel = "Log it",
   onDelete,
 }: Props) {
-  const std = estimateStandardDrinks(Number(value.volume_ml), Number(value.abv_percent));
-  const flOz = value.volume_ml ? Math.round((value.volume_ml / ML_PER_FLOZ) * 10) / 10 : 0;
-
-  // Changing the volume rescales calories proportionally (keeps calories-per-ml constant).
-  function setVolume(rawMl: number) {
-    const newMl = Math.max(0, Math.round(rawMl));
-    const oldMl = Number(value.volume_ml) || 0;
-    const oldCal = Number(value.calories) || 0;
-    const calories = oldMl > 0 && newMl > 0 ? Math.round(oldCal * (newMl / oldMl)) : oldCal;
-    onChange({ ...value, volume_ml: newMl, calories });
-  }
-
   return (
     <div className="space-y-3">
       {aiNote && (
-        <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+        <div
+          className="rounded-lg px-3 py-2 text-xs text-stone-700 dark:text-stone-200"
+          style={{ backgroundColor: "color-mix(in srgb, var(--accent-solid) 12%, transparent)" }}
+        >
           {aiNote}
         </div>
       )}
@@ -61,22 +50,22 @@ export default function DrinkForm({
         Name
         <input
           className={inputCls}
-          placeholder="e.g. Modelo Especial"
+          placeholder="e.g. Blue Dream, Wyld Gummy"
           value={value.name}
           onChange={(e) => onChange({ ...value, name: e.target.value })}
         />
       </label>
 
       <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
-        Type
+        Method
         <select
           className={inputCls}
-          value={value.drink_type}
-          onChange={(e) => onChange({ ...value, drink_type: e.target.value as DrinkType })}
+          value={value.method}
+          onChange={(e) => onChange({ ...value, method: e.target.value as SessionMethod })}
         >
-          {DRINK_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
+          {SESSION_METHODS.map((m) => (
+            <option key={m} value={m}>
+              {m}
             </option>
           ))}
         </select>
@@ -84,47 +73,36 @@ export default function DrinkForm({
 
       <div className="grid grid-cols-2 gap-2">
         <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
-          Volume (ml)
+          Amount
           <input
-            type="number"
             className={inputCls}
-            value={value.volume_ml}
-            onChange={(e) => setVolume(Number(e.target.value))}
+            placeholder="e.g. 0.3g, 1 gummy"
+            value={value.amount}
+            onChange={(e) => onChange({ ...value, amount: e.target.value })}
           />
         </label>
         <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
-          Volume (fl oz)
+          THC % (optional)
           <input
             type="number"
             step="0.1"
+            min="0"
             className={inputCls}
-            value={flOz}
-            onChange={(e) => setVolume(Number(e.target.value) * ML_PER_FLOZ)}
+            value={value.thc_percent}
+            onChange={(e) => onChange({ ...value, thc_percent: Number(e.target.value) })}
           />
         </label>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
-          ABV (%)
-          <input
-            type="number"
-            step="0.1"
-            className={inputCls}
-            value={value.abv_percent}
-            onChange={(e) => onChange({ ...value, abv_percent: Number(e.target.value) })}
-          />
-        </label>
-        <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
-          Calories
-          <input
-            type="number"
-            className={inputCls}
-            value={value.calories}
-            onChange={(e) => onChange({ ...value, calories: Number(e.target.value) })}
-          />
-        </label>
-      </div>
+      <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
+        Notes (optional)
+        <input
+          className={inputCls}
+          placeholder="e.g. with friends, relaxing"
+          value={value.notes}
+          onChange={(e) => onChange({ ...value, notes: e.target.value })}
+        />
+      </label>
 
       {onQuantityChange && (
         <label className="block text-xs font-medium text-stone-500 dark:text-stone-400">
@@ -138,7 +116,7 @@ export default function DrinkForm({
             onChange={(e) => onQuantityChange(Math.max(1, Math.floor(Number(e.target.value)) || 1))}
           />
           <span className="mt-1 block text-[11px] font-normal text-stone-400">
-            Logs this drink multiple times at once.
+            Logs this session multiple times at once.
           </span>
         </label>
       )}
@@ -154,11 +132,6 @@ export default function DrinkForm({
           />
         </label>
       )}
-
-      <p className="text-xs text-stone-400 dark:text-stone-500">
-        ≈ {std.toFixed(1)} standard drink{std.toFixed(1) === "1.0" ? "" : "s"} · calories adjust with
-        volume
-      </p>
 
       <div className="flex gap-2 pt-1">
         <button

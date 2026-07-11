@@ -6,12 +6,12 @@ import { downloadBackup, importBackup } from "@/lib/backup";
 import { useTheme, setTheme, type Theme } from "@/lib/theme";
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 dark:border-stone-700 dark:bg-stone-900";
+  "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--accent-solid)] focus:ring-2 focus:ring-[var(--accent-solid)]/30 dark:border-stone-700 dark:bg-stone-900";
 
 export default function ProfilePage() {
   const profile = useProfile();
   // Re-seed the form whenever the stored profile changes (e.g. after save).
-  const sig = `${profile.name}|${profile.motto}|${profile.dailyLimitDrinks}|${profile.weeklyLimitDrinks}|${profile.dryDaysGoal}|${profile.costPerDrink}|${profile.baselineWeeklyDrinks}|${profile.weight}|${profile.weightUnit}|${profile.sex}`;
+  const sig = `${profile.name}|${profile.motto}|${profile.dailyLimitDrinks}|${profile.weeklyLimitDrinks}|${profile.dryDaysGoal}|${profile.costPerDrink}|${profile.baselineWeeklyDrinks}|${profile.weight}|${profile.weightUnit}|${profile.sex}|${profile.dailySessionLimit}`;
   return <ProfileForm key={sig} initial={profile} />;
 }
 
@@ -26,6 +26,7 @@ function ProfileForm({ initial }: { initial: Profile }) {
   const [weight, setWeight] = useState(String(initial.weight || ""));
   const [weightUnit, setWeightUnit] = useState<"kg" | "lb">(initial.weightUnit);
   const [sex, setSex] = useState<Profile["sex"]>(initial.sex);
+  const [sessionLimit, setSessionLimit] = useState(String(initial.dailySessionLimit));
   const [savedAt, setSavedAt] = useState(0);
 
   function handleSave() {
@@ -40,6 +41,7 @@ function ProfileForm({ initial }: { initial: Profile }) {
       weight: Math.max(0, Number(weight) || 0),
       weightUnit,
       sex,
+      dailySessionLimit: Math.max(0, Number(sessionLimit) || 0),
       onboarded: true,
     });
     setSavedAt(Date.now());
@@ -85,6 +87,21 @@ function ProfileForm({ initial }: { initial: Profile }) {
           <span className="mt-1 block text-[11px] font-normal text-stone-400">
             The ring on the Track tab counts down from this and warns you when you go over. Set 0 to
             hide the limit.
+          </span>
+        </label>
+
+        <label className="mt-4 block text-xs font-medium text-stone-500 dark:text-stone-400">
+          🌿 Daily limit (weed mode sessions)
+          <input
+            type="number"
+            min="0"
+            step="1"
+            className={inputCls}
+            value={sessionLimit}
+            onChange={(e) => setSessionLimit(e.target.value)}
+          />
+          <span className="mt-1 block text-[11px] font-normal text-stone-400">
+            Used for the ring and streaks when weed mode is on (toggle it in the header).
           </span>
         </label>
 
@@ -167,7 +184,7 @@ function ProfileForm({ initial }: { initial: Profile }) {
                 <input
                   type="number"
                   min="0"
-                  className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 dark:border-stone-700 dark:bg-stone-900"
+                  className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--accent-solid)] focus:ring-2 focus:ring-[var(--accent-solid)]/30 dark:border-stone-700 dark:bg-stone-900"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
                 />
@@ -202,7 +219,7 @@ function ProfileForm({ initial }: { initial: Profile }) {
 
         <button
           onClick={handleSave}
-          className="mt-5 w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm"
+          className="mt-5 w-full rounded-full bg-gradient-to-r from-[var(--accent-from)] to-[var(--accent-to)] py-2.5 text-sm font-semibold text-white shadow-sm"
         >
           Save
         </button>

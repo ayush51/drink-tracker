@@ -32,7 +32,7 @@ export default function OnboardingGate() {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-50 dark:bg-stone-950">
       {/* hero */}
-      <div className="bg-gradient-to-br from-amber-500 to-orange-600 px-6 pb-10 pt-14 text-center text-white">
+      <div className="bg-gradient-to-br from-[var(--accent-from)] to-[var(--accent-to)] px-6 pb-10 pt-14 text-center text-white">
         <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 ring-1 ring-white/30">
           <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 4h16l-8 9-8-9Z" />
@@ -100,7 +100,7 @@ export default function OnboardingGate() {
         <button
           onClick={finish}
           disabled={!name.trim()}
-          className="w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-600 py-3 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
+          className="w-full rounded-full bg-gradient-to-r from-[var(--accent-from)] to-[var(--accent-to)] py-3 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
         >
           Get started
         </button>

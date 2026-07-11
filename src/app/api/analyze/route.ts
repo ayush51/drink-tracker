@@ -3,7 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
-const PROMPT = `You are helping someone log a drink they photographed for a personal drinking/calorie tracker.
+const DRINK_PROMPT = `You are helping someone log a drink they photographed for a personal drinking/calorie tracker.
 Look at the image and identify the beverage. Respond with ONLY a JSON object matching these exact fields:
 {
   "name": string (e.g. "Modelo Especial", "Glass of red wine"),
@@ -16,6 +16,19 @@ Look at the image and identify the beverage. Respond with ONLY a JSON object mat
 }
 If you cannot identify a beverage in the image at all, set "name" to "Unknown", confidence to "low", and still provide reasonable best-guess numbers for a standard serving.`;
 
+const WEED_PROMPT = `You are helping someone log a cannabis product they photographed for a personal, harm-reduction session tracker.
+Look at the image and identify the product. Respond with ONLY a JSON object matching these exact fields:
+{
+  "name": string (e.g. "Blue Dream", "Wyld Raspberry Gummy", strain/product name if visible),
+  "method": one of "flower" | "edible" | "vape" | "concentrate" | "other",
+  "amount": string (best estimate of a single serving, e.g. "0.3g", "1 gummy (10mg)", "1 hit"),
+  "thc_percent": number (estimated THC percent or mg if printed on packaging; 0 if unknown),
+  "notes": string (empty string if nothing notable),
+  "confidence": "high" | "medium" | "low",
+  "description": string (one short sentence on what visual cues led to this guess)
+}
+If you cannot identify a cannabis product in the image at all, set "name" to "Unknown", confidence to "low", and still provide reasonable best-guess values for a standard single serving.`;
+
 export async function POST(req: NextRequest) {
   if (!process.env.GEMINI_API_KEY) {
     return NextResponse.json(
@@ -24,15 +37,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { image, mediaType, hint } = await req.json();
+  const { image, mediaType, hint, domain } = await req.json();
   if (!image) {
     return NextResponse.json({ error: "No image provided" }, { status: 400 });
   }
 
+  const basePrompt = domain === "weed" ? WEED_PROMPT : DRINK_PROMPT;
   const trimmedHint = typeof hint === "string" ? hint.trim() : "";
   const promptText = trimmedHint
-    ? `${PROMPT}\n\nThe user added this note about the drink — trust it, as it may give the exact name or serving size (e.g. "16 fl oz" ≈ 473 ml, "12 fl oz" ≈ 355 ml, "1 pint" ≈ 473 ml): "${trimmedHint}"`
-    : PROMPT;
+    ? `${basePrompt}\n\nThe user added this note — trust it, it may give the exact name or serving size (e.g. "16 fl oz" ≈ 473 ml, "12 fl oz" ≈ 355 ml, "1 pint" ≈ 473 ml for drinks): "${trimmedHint}"`
+    : basePrompt;
 
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMode } from "@/lib/mode";
 
 const TABS = [
   {
@@ -23,6 +24,7 @@ const TABS = [
     href: "/group",
     label: "Group",
     icon: "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3 20a6 6 0 0 1 12 0M16 11a3 3 0 1 0-1-5.8M21 20a6 6 0 0 0-4-5.7",
+    alcoholOnly: true,
   },
   {
     href: "/profile",
@@ -33,11 +35,13 @@ const TABS = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const mode = useMode();
+  const tabs = TABS.filter((t) => !(t.alcoholOnly && mode === "weed"));
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-stone-200 bg-white/85 backdrop-blur-md dark:border-stone-800 dark:bg-stone-950/85">
       <div className="mx-auto flex max-w-md items-stretch justify-around px-2 pb-[env(safe-area-inset-bottom)]">
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const active = pathname === tab.href;
           return (
             <Link
@@ -45,7 +49,7 @@ export default function BottomNav() {
               href={tab.href}
               className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
                 active
-                  ? "text-amber-600 dark:text-amber-400"
+                  ? "text-[var(--accent-solid)]"
                   : "text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
               }`}
             >

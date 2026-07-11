@@ -1,9 +1,19 @@
-import type { DayBar } from "@/lib/stats";
 import { todayLocal } from "@/lib/drinks";
 
-export default function WeeklyChart({ data, limit }: { data: DayBar[]; limit: number }) {
-  const max = Math.max(limit || 0, ...data.map((d) => d.std), 1);
+export type ChartBar = { date: string; label: string; value: number };
+
+export default function WeeklyChart({
+  data,
+  limit,
+  formatTooltip,
+}: {
+  data: ChartBar[];
+  limit: number;
+  formatTooltip?: (v: number) => string;
+}) {
+  const max = Math.max(limit || 0, ...data.map((d) => d.value), 1);
   const today = todayLocal();
+  const fmt = formatTooltip ?? ((v: number) => v.toFixed(1));
 
   return (
     <div>
@@ -16,15 +26,18 @@ export default function WeeklyChart({ data, limit }: { data: DayBar[]; limit: nu
         )}
         <div className="flex h-full items-end gap-1.5">
           {data.map((d) => {
-            const over = limit > 0 && d.std > limit;
+            const over = limit > 0 && d.value > limit;
             return (
               <div key={d.date} className="flex h-full flex-1 flex-col justify-end">
                 <div
-                  className={`w-full rounded-t ${over ? "bg-rose-500" : "bg-amber-500"} ${
-                    d.std === 0 ? "min-h-[2px] bg-stone-200 dark:bg-stone-800" : ""
+                  className={`w-full rounded-t ${over ? "bg-rose-500" : ""} ${
+                    d.value === 0 ? "min-h-[2px] bg-stone-200 dark:bg-stone-800" : ""
                   }`}
-                  style={{ height: d.std > 0 ? `${(d.std / max) * 100}%` : undefined }}
-                  title={`${d.std.toFixed(1)} std`}
+                  style={{
+                    height: d.value > 0 ? `${(d.value / max) * 100}%` : undefined,
+                    backgroundColor: over || d.value === 0 ? undefined : "var(--accent-solid)",
+                  }}
+                  title={fmt(d.value)}
                 />
               </div>
             );
@@ -35,13 +48,14 @@ export default function WeeklyChart({ data, limit }: { data: DayBar[]; limit: nu
         {data.map((d) => (
           <div
             key={d.date}
-            className={`flex-1 text-center text-[11px] font-medium ${
-              d.date === today
-                ? "text-amber-600 dark:text-amber-400"
-                : "text-stone-400 dark:text-stone-500"
-            }`}
+            className="flex-1 text-center text-[11px] font-medium"
+            style={{
+              color: d.date === today ? "var(--accent-solid)" : undefined,
+            }}
           >
-            {d.label}
+            <span className={d.date === today ? "" : "text-stone-400 dark:text-stone-500"}>
+              {d.label}
+            </span>
           </div>
         ))}
       </div>

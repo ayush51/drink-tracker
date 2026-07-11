@@ -13,6 +13,7 @@ export type Profile = {
   weight: number;
   weightUnit: "kg" | "lb";
   sex: "" | "male" | "female";
+  dailySessionLimit: number;
   onboarded: boolean;
 };
 
@@ -28,6 +29,7 @@ const DEFAULT: Profile = {
   weight: 0,
   weightUnit: "kg",
   sex: "",
+  dailySessionLimit: 2,
   onboarded: false,
 };
 
@@ -55,6 +57,7 @@ function read(): Profile {
         weight: parsed.weight ?? DEFAULT.weight,
         weightUnit: parsed.weightUnit ?? DEFAULT.weightUnit,
         sex: parsed.sex ?? DEFAULT.sex,
+        dailySessionLimit: parsed.dailySessionLimit ?? DEFAULT.dailySessionLimit,
         // existing users (already have a name) are treated as onboarded
         onboarded: parsed.onboarded ?? Boolean(parsed.name),
       };
