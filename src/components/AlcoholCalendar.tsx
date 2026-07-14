@@ -6,6 +6,7 @@ import { todayLocal } from "@/lib/drinks";
 import { useDrinks } from "@/lib/drinkStore";
 import DrinkListItem from "@/components/DrinkListItem";
 import DrinkEditModal from "@/components/DrinkEditModal";
+import DrinkAddModal from "@/components/DrinkAddModal";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 const MONTHS = [
@@ -23,6 +24,7 @@ export default function AlcoholCalendar() {
   const [month, setMonth] = useState(now.getMonth()); // 0-11
   const [selected, setSelected] = useState<string>(todayLocal());
   const [editing, setEditing] = useState<LogEntry | null>(null);
+  const [adding, setAdding] = useState(false);
   const allDrinks = useDrinks();
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -126,13 +128,25 @@ export default function AlcoholCalendar() {
       </section>
 
       <section>
-        <h2 className="mb-2 px-1 text-sm font-semibold text-stone-500 dark:text-stone-400">
-          {new Date(selected + "T00:00:00").toLocaleDateString([], {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          })}
-        </h2>
+        <div className="mb-2 flex items-center justify-between px-1">
+          <h2 className="text-sm font-semibold text-stone-500 dark:text-stone-400">
+            {new Date(selected + "T00:00:00").toLocaleDateString([], {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
+          </h2>
+          <button
+            onClick={() => setAdding(true)}
+            className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white shadow-sm"
+            style={{
+              backgroundImage: "linear-gradient(to right, var(--accent-from), var(--accent-to))",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            Add
+          </button>
+        </div>
         {selectedLogs.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-stone-300 px-4 py-6 text-center text-sm text-stone-400 dark:border-stone-700">
             No drinks logged this day.
@@ -147,6 +161,7 @@ export default function AlcoholCalendar() {
       </section>
 
       <DrinkEditModal log={editing} onClose={() => setEditing(null)} />
+      <DrinkAddModal date={adding ? selected : null} onClose={() => setAdding(false)} />
     </main>
   );
 }

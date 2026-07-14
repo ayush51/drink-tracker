@@ -6,6 +6,7 @@ import { todayLocal } from "@/lib/drinks";
 import { useSessions } from "@/lib/sessionStore";
 import WeedListItem from "@/components/WeedListItem";
 import WeedEditModal from "@/components/WeedEditModal";
+import WeedAddModal from "@/components/WeedAddModal";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 const MONTHS = [
@@ -23,6 +24,7 @@ export default function WeedCalendar() {
   const [month, setMonth] = useState(now.getMonth());
   const [selected, setSelected] = useState<string>(todayLocal());
   const [editing, setEditing] = useState<SessionEntry | null>(null);
+  const [adding, setAdding] = useState(false);
   const allSessions = useSessions();
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -120,13 +122,25 @@ export default function WeedCalendar() {
       </section>
 
       <section>
-        <h2 className="mb-2 px-1 text-sm font-semibold text-stone-500 dark:text-stone-400">
-          {new Date(selected + "T00:00:00").toLocaleDateString([], {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          })}
-        </h2>
+        <div className="mb-2 flex items-center justify-between px-1">
+          <h2 className="text-sm font-semibold text-stone-500 dark:text-stone-400">
+            {new Date(selected + "T00:00:00").toLocaleDateString([], {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
+          </h2>
+          <button
+            onClick={() => setAdding(true)}
+            className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white shadow-sm"
+            style={{
+              backgroundImage: "linear-gradient(to right, var(--accent-from), var(--accent-to))",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            Add
+          </button>
+        </div>
         {selectedSessions.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-stone-300 px-4 py-6 text-center text-sm text-stone-400 dark:border-stone-700">
             No sessions logged this day.
@@ -141,6 +155,7 @@ export default function WeedCalendar() {
       </section>
 
       <WeedEditModal session={editing} onClose={() => setEditing(null)} />
+      <WeedAddModal date={adding ? selected : null} onClose={() => setAdding(false)} />
     </main>
   );
 }
