@@ -38,26 +38,34 @@ export async function POST(req: NextRequest) {
   }
 
   const { image, mediaType, hint, domain } = await req.json();
-  if (!image) {
-    return NextResponse.json({ error: "No image provided" }, { status: 400 });
+  const trimmedHint = typeof hint === "string" ? hint.trim() : "";
+  if (!image && !trimmedHint) {
+    return NextResponse.json({ error: "No image or description provided" }, { status: 400 });
   }
 
   const basePrompt = domain === "weed" ? WEED_PROMPT : DRINK_PROMPT;
-  const trimmedHint = typeof hint === "string" ? hint.trim() : "";
-  const promptText = trimmedHint
-    ? `${basePrompt}\n\nThe user added this note — trust it, it may give the exact name or serving size (e.g. "16 fl oz" ≈ 473 ml, "12 fl oz" ≈ 355 ml, "1 pint" ≈ 473 ml for drinks): "${trimmedHint}"`
-    : basePrompt;
+  let promptText = basePrompt;
+  if (trimmedHint && image) {
+    promptText = `${basePrompt}\n\nThe user added this note — trust it, it may give the exact name or serving size (e.g. "16 fl oz" ≈ 473 ml, "12 fl oz" ≈ 355 ml, "1 pint" ≈ 473 ml for drinks): "${trimmedHint}"`;
+  } else if (trimmedHint) {
+    promptText = `${basePrompt}\n\nThere is no photo. The user is describing the item from memory instead: "${trimmedHint}". Use your knowledge of typical brands, drinks, and serving sizes to give your best estimate.`;
+  }
 
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+  const contents: (
+    | { text: string }
+    | { inlineData: { mimeType: string; data: string } }
+  )[] = [{ text: promptText }];
+  if (image) {
+    contents.push({ inlineData: { mimeType: mediaType || "image/jpeg", data: image } });
+  }
 
   let raw = "";
   try {
     const response = await ai.models.generateContent({
       model: MODEL,
-      contents: [
-        { text: promptText },
-        { inlineData: { mimeType: mediaType || "image/jpeg", data: image } },
-      ],
+      contents,
       config: { responseMimeType: "application/json" },
     });
     raw = response.text ?? "";
