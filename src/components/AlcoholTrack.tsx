@@ -19,6 +19,7 @@ import DrinkForm from "@/components/DrinkForm";
 import DrinkListItem from "@/components/DrinkListItem";
 import DrinkEditModal from "@/components/DrinkEditModal";
 import Insights from "@/components/Insights";
+import AbstainAugustBanner from "@/components/AbstainAugustBanner";
 
 const nowLocalInput = () => toLocalInput(new Date().toISOString());
 
@@ -233,6 +234,8 @@ export default function AlcoholTrack() {
           </div>
         )}
       </section>
+
+      <AbstainAugustBanner />
 
       <Insights />
 
